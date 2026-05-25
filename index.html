@@ -1,0 +1,2569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PINN Fluid Dynamics Dashboard</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' },
+      startup: { typeset: false }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07080b;
+      --panel: #10131a;
+      --panel-2: #151923;
+      --line: #2b3240;
+      --text: #f3f7fb;
+      --muted: #9da8b5;
+      --cyan: #27d8c6;
+      --blue: #3aa2ff;
+      --green: #72df72;
+      --amber: #f4b84a;
+      --rose: #ff5d7a;
+    }
+
+    body[data-theme="light"] {
+      color-scheme: light;
+      --bg: #eef3f8;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --line: #cbd5e1;
+      --text: #0f172a;
+      --muted: #526173;
+      --cyan: #047c74;
+      --blue: #2563eb;
+      --green: #16823a;
+      --amber: #a16207;
+      --rose: #be123c;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+      overflow: hidden;
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: 304px minmax(0, 1fr);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 55%, var(--bg));
+      min-height: 100%;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .brand {
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.05;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .control-group {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #d7dee8;
+      font-size: 12px;
+      font-weight: 740;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 0.05em;
+    }
+
+    .control-value {
+      color: var(--cyan);
+      font-weight: 780;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .segmented {
+      display: grid;
+      gap: 7px;
+    }
+
+    .segmented.two {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .slider-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .slider-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .slider-row label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .select-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .select-row label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .select-row select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #121722;
+      color: var(--text);
+      min-height: 36px;
+      padding: 7px 9px;
+    }
+
+    body[data-theme="light"] .select-row select {
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+
+    .segmented button,
+    .tab-button,
+    .toggle {
+      border: 1px solid var(--line);
+      background: #121722;
+      color: var(--muted);
+      border-radius: 8px;
+      min-height: 36px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease;
+    }
+
+    .segmented button:hover,
+    .tab-button:hover,
+    .toggle:hover {
+      transform: translateY(-1px);
+      border-color: #405063;
+      color: var(--text);
+    }
+
+    .segmented button.active,
+    .tab-button.active,
+    .toggle.active {
+      background: #17333a;
+      color: #eafffb;
+      border-color: rgba(39, 216, 198, 0.7);
+    }
+
+    body[data-theme="light"] .segmented button,
+    body[data-theme="light"] .tab-button,
+    body[data-theme="light"] .toggle {
+      background: #f8fafc;
+      color: #334155;
+      border-color: #cbd5e1;
+    }
+
+    body[data-theme="light"] .segmented button.active,
+    body[data-theme="light"] .tab-button.active,
+    body[data-theme="light"] .toggle.active {
+      background: #e0f7f4;
+      color: #075e59;
+      border-color: #14b8a6;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--cyan);
+    }
+
+    .main {
+      min-width: 0;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 36%, var(--bg));
+    }
+
+    .title-block h2 {
+      margin: 0;
+      font-size: 21px;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .title-block p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(96px, 1fr));
+      gap: 8px;
+      min-width: 490px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 720;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 16px;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 32%, var(--bg));
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      min-width: max-content;
+      padding-inline: 14px;
+    }
+
+    .view {
+      min-height: 0;
+      overflow: auto;
+      padding: 18px 20px 22px;
+    }
+
+    .hidden { display: none !important; }
+
+    .canvas-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .canvas-grid.benchmark {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-width: 0;
+      overflow-x: auto;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      color: #dbe6f2;
+      font-weight: 740;
+      font-size: 13px;
+    }
+
+    .panel-head small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 680;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      background: #05070b;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      image-rendering: auto;
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bar {
+      height: 9px;
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid #334155;
+    }
+
+    .bar.velocity {
+      background: linear-gradient(90deg, #1c1265, #1f4dac, #18b2d1, #1db978, #b4dc34, #f8be26, #e84014, #76140c);
+    }
+
+    .bar.prediction {
+      background: linear-gradient(90deg, #ff5d7a, #f4b84a, #b4dc34, #27d8c6);
+    }
+
+    .solver-panel {
+      margin-top: 14px;
+    }
+
+    .solver-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-bottom: 1px solid var(--line);
+    }
+
+    .solver-summary div {
+      padding: 10px 12px;
+      border-right: 1px solid var(--line);
+    }
+
+    .solver-summary div:last-child {
+      border-right: 0;
+    }
+
+    .solver-summary span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 720;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .solver-summary strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 14px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 780;
+    }
+
+    .status-chip.ok {
+      color: var(--green);
+      border-color: color-mix(in srgb, var(--green) 50%, var(--line));
+    }
+
+    .status-chip.warn {
+      color: var(--amber);
+      border-color: color-mix(in srgb, var(--amber) 50%, var(--line));
+    }
+
+    .status-chip.hot {
+      color: var(--rose);
+      border-color: color-mix(in srgb, var(--rose) 50%, var(--line));
+    }
+
+    .theme-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      margin-right: 7px;
+      vertical-align: -3px;
+    }
+
+    .theme-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .subgrid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .chart-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .research-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .research-note {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .note-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .note-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .report-stack {
+      display: grid;
+      gap: 18px;
+      max-width: 1120px;
+      counter-reset: reportPage;
+    }
+
+    .report-stack > .panel {
+      position: relative;
+      min-height: 860px;
+      counter-increment: reportPage;
+    }
+
+    .report-stack > .panel::after {
+      content: "Page " counter(reportPage);
+      position: absolute;
+      right: 14px;
+      bottom: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 720;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .report-body {
+      padding: 18px 18px 34px;
+      color: var(--text);
+      line-height: 1.62;
+      font-size: 15px;
+    }
+
+    .report-body p {
+      margin: 0 0 12px;
+    }
+
+    .report-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .report-body h3 {
+      margin: 18px 0 8px;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .report-body h3:first-child {
+      margin-top: 0;
+    }
+
+    .report-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .report-list li {
+      margin: 6px 0;
+    }
+
+    .report-list strong {
+      color: var(--text);
+    }
+
+    .report-kicker {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 780;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .equation-explain {
+      display: grid;
+      gap: 10px;
+    }
+
+    .equation-explain .equation {
+      margin: 0;
+    }
+
+    .paper-canvas {
+      background: var(--panel);
+      cursor: zoom-in;
+    }
+
+    .zoom-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
+      padding: 24px;
+      background: rgba(2, 6, 23, 0.84);
+      backdrop-filter: blur(10px);
+    }
+
+    .zoom-overlay.active {
+      display: grid;
+    }
+
+    .zoom-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: #f8fafc;
+    }
+
+    .zoom-head strong {
+      font-size: 15px;
+      font-weight: 760;
+    }
+
+    .zoom-close {
+      border: 1px solid rgba(226, 232, 240, 0.34);
+      background: rgba(15, 23, 42, 0.82);
+      color: #f8fafc;
+      border-radius: 8px;
+      min-height: 36px;
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+
+    .zoom-stage {
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid rgba(226, 232, 240, 0.28);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .zoom-stage img {
+      display: block;
+      width: min(1800px, 180vw);
+      max-width: none;
+      height: auto;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: minmax(340px, 0.85fr) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .formula {
+      padding: 15px;
+      border-top: 1px solid var(--line);
+      color: #dbe4ef;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .equation-stack {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-top: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 58%, var(--bg));
+    }
+
+    .equation {
+      background: #05070b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #f8fafc;
+      padding: 12px 14px;
+      overflow-x: auto;
+    }
+
+    body[data-theme="light"] .equation {
+      background: #f8fafc;
+      border-color: #d6e0ea;
+      color: #0f172a;
+    }
+
+    .equation strong {
+      display: block;
+      color: #93c5fd;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    body[data-theme="light"] .equation strong {
+      color: #334155;
+    }
+
+    .latex-caption {
+      padding: 10px 14px 12px;
+      border-top: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 70%, var(--bg));
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-x: auto;
+    }
+
+    .table {
+      width: 100%;
+      min-width: 680px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .table th, .table td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table th {
+      color: var(--cyan);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .ok { color: var(--green); font-weight: 760; }
+    .warn { color: var(--amber); font-weight: 760; }
+    .hot { color: var(--rose); font-weight: 760; }
+
+    @media (max-width: 1180px) {
+      body { grid-template-columns: 1fr; overflow: auto; }
+      .sidebar {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 18px;
+      }
+      .brand, .control-group {
+        border-bottom: 0;
+        padding: 0;
+        margin: 0;
+      }
+      .main { height: auto; min-height: 100vh; }
+      html, body { overflow: auto; }
+      .stats { min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .topbar, .subgrid, .architecture { grid-template-columns: 1fr; }
+      .canvas-grid.benchmark { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .research-note { grid-template-columns: 1fr; }
+      .report-stack > .panel { min-height: auto; }
+    }
+
+    @media (max-width: 720px) {
+      .sidebar, .canvas-grid, .chart-grid, .canvas-grid.benchmark {
+        grid-template-columns: 1fr;
+      }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .topbar { padding-inline: 14px; }
+      .view { padding-inline: 14px; }
+      .tabs { padding-inline: 14px; }
+      .tab-button {
+        flex: 1 1 calc(50% - 8px);
+        text-align: center;
+        min-height: 44px;
+      }
+      .segmented button,
+      .toggle,
+      .select-row select {
+        min-height: 44px;
+      }
+      .solver-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .solver-summary div:nth-child(2) { border-right: 0; }
+      .report-body { padding: 15px 14px 32px; font-size: 14px; }
+      .zoom-overlay { padding: 12px; }
+      .zoom-stage img { width: 1400px; }
+    }
+
+    @media (max-width: 480px) {
+      .stats { grid-template-columns: 1fr; }
+      .tab-button { flex-basis: 100%; }
+      .solver-summary { grid-template-columns: 1fr; }
+      .solver-summary div { border-right: 0; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>PINN Fluid Dynamics</h1>
+      <p>Achyuthan Vallath | 201-SND-VA</p>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Geometry <span id="geometryValue" class="control-value">Ellipse</span></div>
+      <div id="geometryButtons" class="segmented">
+        <button data-geometry="circle">Circle</button>
+        <button data-geometry="ellipse" class="active">Ellipse</button>
+        <button data-geometry="triangle">Wedge</button>
+        <button data-geometry="plate">Plate</button>
+        <button data-geometry="wing">Wing</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Training <span id="trainingValue" class="control-value">Separate</span></div>
+      <div id="trainingButtons" class="segmented two">
+        <button data-training="separate" class="active">Separate</button>
+        <button data-training="joint">Joint</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Epoch <span id="epochValue" class="control-value">8,500</span></div>
+      <input id="epochSlider" type="range" min="0" max="20000" value="8500" step="100" />
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Collocation <span id="collocationValue" class="control-value">30%</span></div>
+      <input id="collocationSlider" type="range" min="10" max="90" value="30" step="5" />
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Advanced CFD <span id="advancedValue" class="control-value">Off</span></div>
+      <button id="advancedToggle" class="toggle" type="button">Show parameters</button>
+      <div id="advancedControls" class="slider-stack hidden" style="margin-top: 12px;">
+        <div class="slider-row">
+          <label for="angleSlider">Angle <span id="angleValue">0 deg</span></label>
+          <input id="angleSlider" type="range" min="-90" max="90" value="0" step="1" />
+        </div>
+        <div class="slider-row">
+          <label for="windSlider">Wind velocity <span id="windValue">18 m/s</span></label>
+          <input id="windSlider" type="range" min="4" max="34" value="18" step="1" />
+        </div>
+        <div class="slider-row">
+          <label for="dragSlider">Wake drag <span id="dragValue">100%</span></label>
+          <input id="dragSlider" type="range" min="30" max="180" value="100" step="5" />
+        </div>
+        <div class="select-row">
+          <label for="flowSelect">Flow option</label>
+          <select id="flowSelect">
+            <option value="incompressible">Incompressible surrogate</option>
+            <option value="compressible">Compressible flag</option>
+          </select>
+        </div>
+        <div class="select-row">
+          <label for="turbulenceSelect">Turbulence model</label>
+          <select id="turbulenceSelect">
+            <option value="laminar">Laminar</option>
+            <option value="kepsilon">k-epsilon style wake</option>
+            <option value="sst">k-omega SST style wake</option>
+            <option value="les">LES preview warning</option>
+          </select>
+        </div>
+        <div class="select-row">
+          <label for="meshSelect">Mesh level</label>
+          <select id="meshSelect">
+            <option value="coarse">Coarse</option>
+            <option value="medium" selected>Medium</option>
+            <option value="fine">Fine</option>
+          </select>
+        </div>
+        <div class="select-row">
+          <label for="validationSelect">Validation mode</label>
+          <select id="validationSelect">
+            <option value="none">Current demo only</option>
+            <option value="cylinder">Cylinder flow benchmark</option>
+            <option value="step">Backward-facing step</option>
+            <option value="airfoil">Airfoil benchmark</option>
+            <option value="pipe">Pipe flow benchmark</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Renderer <span id="fpsValue" class="control-value">60 fps</span></div>
+      <button id="playToggle" class="toggle active" type="button">Flow animation on</button>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Theme <span id="themeValue" class="control-value">Dark</span></div>
+      <button id="themeToggle" class="toggle active" type="button">Dark mode</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title-block">
+        <h2>Wind-Tunnel Grokking Dashboard</h2>
+        <p>Ground truth CFD field, PINN prediction, shape-dependent snap epochs, spectral diagnostics.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Shape</span><strong id="statShape">Ellipse</strong></div>
+        <div class="stat"><span>State</span><strong id="statState">Memorizing</strong></div>
+        <div class="stat"><span>Snap Epoch</span><strong id="statSnap">10,000</strong></div>
+        <div class="stat"><span>Scarcity</span><strong id="statScarcity">Grokking</strong></div>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Views">
+      <button class="tab-button active" data-view="wind">Live Wind Tunnel</button>
+      <button class="tab-button" data-view="benchmark">Shape Benchmark</button>
+      <button class="tab-button" data-view="research">Research Graphs</button>
+      <button class="tab-button" data-view="diagnostics">Diagnostics</button>
+      <button class="tab-button" data-view="architecture">Architecture</button>
+      <button class="tab-button" data-view="physics">Physics</button>
+      <button class="tab-button" data-view="report">Report</button>
+    </nav>
+
+    <section id="view-wind" class="view">
+      <div class="subgrid">
+        <div class="canvas-grid">
+          <article class="panel">
+            <div class="panel-head"><span>Ground Truth CFD</span><small>velocity magnitude</small></div>
+            <div class="canvas-wrap"><canvas id="truthCanvas" width="640" height="320"></canvas></div>
+            <div class="legend"><span>slow</span><div class="bar velocity"></div><span>fast</span></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><span>PINN Prediction</span><small id="pinnCaption">pre-snap field</small></div>
+            <div class="canvas-wrap"><canvas id="pinnCanvas" width="640" height="320"></canvas></div>
+            <div class="legend"><span>error</span><div class="bar prediction"></div><span>generalized</span></div>
+          </article>
+        </div>
+        <div class="chart-stack">
+          <article class="panel">
+            <div class="panel-head"><span>Generalization Loss</span><small>live epoch marker</small></div>
+            <canvas id="lossCanvas" width="640" height="300"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><span>Wake Profile</span><small>x = 6.0 m</small></div>
+            <canvas id="profileCanvas" width="640" height="240"></canvas>
+          </article>
+        </div>
+      </div>
+      <article class="panel solver-panel">
+        <div class="panel-head"><span>CFD Reliability Guardrails</span><small id="accuracyClaim">No accuracy claim</small></div>
+        <div class="solver-summary">
+          <div><span>Residual</span><strong id="solverResidual">--</strong></div>
+          <div><span>CFL</span><strong id="solverCfl">--</strong></div>
+          <div><span>Mass Error</span><strong id="solverMass">--</strong></div>
+          <div><span>Forces</span><strong id="solverForces">--</strong></div>
+        </div>
+        <table class="table">
+          <thead><tr><th>Check</th><th>Status</th><th>Evidence</th></tr></thead>
+          <tbody id="solverRows"></tbody>
+        </table>
+      </article>
+    </section>
+
+    <section id="view-benchmark" class="view hidden">
+      <div id="benchmarkGrid" class="canvas-grid benchmark"></div>
+    </section>
+
+    <section id="view-research" class="view hidden">
+      <div class="research-note">
+        <div class="note-card"><strong>Loss and accuracy</strong>Epoch slider moves the phase marker; joint training aligns the validation snap at epoch 12,000.</div>
+        <div class="note-card"><strong>Wake profiles</strong>Profiles compare CFD truth, noisy memorization, and grokked PINN at near and far wake slices.</div>
+        <div class="note-card"><strong>Flow complexity</strong>Geometry and turbulence curves show why sharp, separated wakes delay generalization.</div>
+      </div>
+      <div class="research-stack">
+        <article class="panel">
+          <div class="panel-head"><span>Physics-Informed Neural Network: Grokking Loss and Generalization Accuracy</span><small>interactive epoch marker</small></div>
+          <canvas id="paperLossCanvas" class="paper-canvas" width="1560" height="560"></canvas>
+          <div class="latex-caption">Axes: \(x=\mathrm{training\ epochs}\), \(y_{\mathcal{L}}=\log_{10}\mathcal{L}\), \(y_{\mathrm{acc}}=\mathrm{accuracy}\,(\%)\). Phases: memorization is the rapid training-fit regime, circuit formation is the delayed low-complexity representation search, and grokking is the validation snap where \(\mathcal{L}_{\mathrm{val}}\rightarrow0\) and \(A_{\mathrm{val}}\rightarrow100\%\).</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>Multi-Geometry Co-Grokking</span><small>separate learning vs shared representation snap</small></div>
+          <canvas id="paperCoGrokCanvas" class="paper-canvas" width="1560" height="520"></canvas>
+          <div class="latex-caption">Co-grokking is represented by a shared latent transition \(z_{\theta}(x,y,g)\) where multiple geometries generalize at the same epoch \(E_{\mathrm{joint}}\), even though separate training gives geometry-specific \(E_g^{(i)}\). Memorization, circuit formation, and grokking are indicated by the loss dynamics rather than in-plot phase boxes.</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>Aerodynamic Wake Velocity Profiles</span><small>CFD truth vs PINN training progress</small></div>
+          <canvas id="paperWakeCanvas" class="paper-canvas" width="1560" height="560"></canvas>
+          <div class="latex-caption">Axes: \(x=u/U_{\infty}\), \(y=\mathrm{vertical\ position}\,[\mathrm{m}]\). Curves compare \(u_{\mathrm{CFD}}\), \(u_{\mathrm{PINN}}^{(5k)}\), and \(u_{\mathrm{PINN}}^{(20k)}\).</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>Physical Aerodynamics vs PINN Generalization</span><small>Reynolds number and turbulence effects</small></div>
+          <canvas id="paperTurbulenceCanvas" class="paper-canvas" width="1560" height="560"></canvas>
+          <div class="latex-caption">Axes: \(Re=\rho U L/\mu\), \(E_{\mathrm{grok}}\), turbulence intensity \(I=u'/U_{\infty}\), and spectral gap \(\|\hat{a}_{k}\|_{\mathrm{high}}^{2}/\|\hat{a}_{k}\|_{\mathrm{low}}^{2}\). The spectral bias limit means turbulent, high-frequency wake content is learned later than smooth attached-flow modes, so larger \(I\) increases the representation gap and delays grokking.</div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-diagnostics" class="view hidden">
+      <div class="chart-grid">
+        <article class="panel">
+          <div class="panel-head"><span>Activation Spectrum</span><small>DFT of hidden representation</small></div>
+          <canvas id="spectrumCanvas" width="700" height="360"></canvas>
+          <div class="latex-caption">\( \hat{a}_{k}=\sum_{n=0}^{N-1}a_n e^{-i2\pi kn/N},\quad P_k=|\hat{a}_{k}|^2/\max_j|\hat{a}_{j}|^2 \)</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>Collocation Scarcity Regime</span><small>epochs until generalization</small></div>
+          <canvas id="scarcityCanvas" width="700" height="360"></canvas>
+          <div class="latex-caption">\(E_{\mathrm{grok}}(f)\propto f^{-1.85}\) inside the intermediate collocation window \(0.15\le f\le0.70\).</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>Geometry Snap Comparison</span><small>separate vs joint training</small></div>
+          <canvas id="snapCanvas" width="700" height="360"></canvas>
+          <div class="latex-caption">Separate PINNs learn at \(E_g^{\mathrm{shape}}\); joint training ties the shared representation to \(E_{\mathrm{joint}}\approx12{,}000\).</div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>Training Phase Map</span><small>weight norm and residuals</small></div>
+          <canvas id="phaseCanvas" width="700" height="360"></canvas>
+          <div class="latex-caption">\( \|\theta\|_2^2 \) rises during memorization, then regularization compresses the representation as \( \mathcal{R}_{\mathrm{PDE}}\rightarrow0 \).</div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-architecture" class="view hidden">
+      <div class="architecture">
+        <article class="panel">
+          <div class="panel-head"><span>PINN Optimization Graph</span><small>shared coordinate representation</small></div>
+          <canvas id="architectureCanvas" width="1020" height="980"></canvas>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>AI Equation Guide</span><small>PINN training logic</small></div>
+          <div class="equation-stack">
+            <div class="equation"><strong>Network Prediction</strong>\[\hat{\mathbf{q}}_{\theta}(x,y,t,g)=\big(\hat{u},\hat{v},\hat{p}\big)\]</div>
+            <div class="equation"><strong>PINN Objective</strong>\[\mathcal{L}_{\mathrm{total}}=\lambda_{\mathrm{data}}\mathcal{L}_{\mathrm{data}}+\lambda_{\mathrm{physics}}\mathcal{L}_{\mathrm{physics}}+\lambda_{\mathrm{bc}}\mathcal{L}_{\mathrm{bc}}+\lambda_{\mathrm{reg}}\|\theta\|_2^2\]</div>
+            <div class="equation"><strong>Data Fit</strong>\[\mathcal{L}_{\mathrm{data}}=\frac{1}{N}\sum_i\|\hat{\mathbf{q}}_{\theta}(\mathbf{x}_i)-\mathbf{q}_i^{\mathrm{CFD}}\|_2^2\]</div>
+            <div class="equation"><strong>Physics Residual</strong>\[\mathcal{L}_{\mathrm{physics}}=\frac{1}{M}\sum_j\|\mathcal{N}[\hat{\mathbf{q}}_{\theta}](\mathbf{x}_j)\|_2^2\]</div>
+            <div class="equation"><strong>Co-Grokking Representation</strong>\[z_{\theta}=\phi_{\theta}(x,y,t,g),\qquad \hat{\mathbf{q}}_{\theta}=h_{\theta}(z_{\theta})\]</div>
+            <div class="equation"><strong>Spectral Bias Diagnostic</strong>\[G_{\mathrm{spectral}}=\frac{\|\hat{a}_k\|_{\mathrm{high}}^2}{\|\hat{a}_k\|_{\mathrm{low}}^2}\]</div>
+          </div>
+          <table class="table">
+            <thead><tr><th>Equation</th><th>Simple meaning</th><th>Role here</th></tr></thead>
+            <tbody>
+              <tr><td>Network prediction</td><td>The AI takes coordinates and geometry, then predicts velocity and pressure.</td><td>Used conceptually by the PINN prediction view.</td></tr>
+              <tr><td>Total loss</td><td>Training balances matching data, obeying physics, satisfying boundaries, and staying smooth.</td><td>Explains why the loss curves can improve before validation snaps.</td></tr>
+              <tr><td>Physics residual</td><td>The model is penalized when its predicted field violates the governing equations.</td><td>This is the core idea behind a physics-informed neural network.</td></tr>
+              <tr><td>Shared representation</td><td>Different shapes can share one learned internal flow language.</td><td>Supports the co-grokking graph.</td></tr>
+              <tr><td>Spectral diagnostic</td><td>High-frequency wake details are harder for the model to learn than smooth structure.</td><td>Explains delayed generalization in turbulent cases.</td></tr>
+            </tbody>
+          </table>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-physics" class="view hidden">
+      <div class="chart-grid">
+        <article class="panel">
+          <div class="panel-head"><span>Governing Flow Equations</span><small>physics formulas</small></div>
+          <div class="equation-stack">
+            <div class="equation"><strong>Incompressibility</strong>\[\nabla\cdot\mathbf{u}=\frac{\partial u}{\partial x}+\frac{\partial v}{\partial y}=0\]</div>
+            <div class="equation"><strong>Momentum Conservation</strong>\[\rho(\mathbf{u}\cdot\nabla)\mathbf{u}=-\nabla p+\mu\nabla^2\mathbf{u}\]</div>
+            <div class="equation"><strong>Reynolds Number</strong>\[Re=\frac{\rho U L}{\mu}\]</div>
+            <div class="equation"><strong>CFL Time-Step Guardrail</strong>\[\Delta t \le C_{\max}\frac{\Delta x}{\|\mathbf{u}\|+a}\]</div>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><span>Reliability Quantities</span><small>solver checks</small></div>
+          <div class="equation-stack">
+            <div class="equation"><strong>Mass Conservation Error</strong>\[\epsilon_m=\frac{\left|\int_{\partial\Omega}\mathbf{u}\cdot\mathbf{n}\,dS\right|}{\int_{\partial\Omega}|\mathbf{u}\cdot\mathbf{n}|\,dS}\]</div>
+            <div class="equation"><strong>Drag and Lift</strong>\[C_D=\frac{F_D}{\frac{1}{2}\rho U^2A},\qquad C_L=\frac{F_L}{\frac{1}{2}\rho U^2A}\]</div>
+            <div class="equation"><strong>Wall Resolution</strong>\[y^+=\frac{\rho u_{\tau}y}{\mu}\]</div>
+            <div class="equation"><strong>Residual Convergence</strong>\[\mathcal{R}^{(n)}=\|\mathbf{A}\mathbf{q}^{(n)}-\mathbf{b}\|_2\]</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-report" class="view hidden">
+      <div class="report-stack">
+        <article class="panel">
+          <div class="panel-head"><span>Project Report</span><small>plain-language summary</small></div>
+          <div class="report-body">
+            <div class="report-kicker">Scientific Lab Report</div>
+            <h3>Title</h3>
+            <p><strong>Physics-Informed Neural Network Grokking in Simplified Fluid Dynamics.</strong> This project studies how a neural network can first memorize flow behavior and then suddenly generalize after enough training. The dashboard uses a browser-based wind-tunnel surrogate, interactive controls, scientific plots, AI equations, and physics equations to explain that process.</p>
+            <h3>Abstract</h3>
+            <p>The goal of the project is to demonstrate the connection between fluid-flow complexity and delayed generalization in physics-informed neural networks, or PINNs. The dashboard compares a ground-truth flow surrogate with a PINN-style prediction and shows how training loss, validation accuracy, wake profiles, Reynolds number, turbulence intensity, and spectral bias relate to grokking. The main result is that simple flows generalize sooner, while separated or turbulent wakes delay validation improvement because the model must learn finer spatial structure.</p>
+            <h3>Research Question</h3>
+            <p>How do geometry, wake complexity, collocation density, and shared representation learning affect the epoch at which a physics-informed neural network begins to generalize?</p>
+            <h3>Hypothesis</h3>
+            <p>If the flow is smooth or geometrically simple, then the model should generalize earlier because low-frequency structure is easier to learn. If the body creates strong separation, high drag, or turbulent wake features, then grokking should occur later because the model must represent higher-frequency details.</p>
+            <h3>Important Limitation</h3>
+            <p>This is an educational dashboard, not a production CFD solver. The flow field is a fast visual surrogate. It is useful for explaining concepts, but real engineering claims would require a conservative finite-volume solver, geometry cleanup, adaptive meshing, mesh independence, residual convergence, and validation against benchmark data.</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Main Settings</span><small>what each control changes</small></div>
+          <table class="table">
+            <thead><tr><th>Setting</th><th>Simple explanation</th><th>What changes on screen</th></tr></thead>
+            <tbody>
+              <tr><td>Geometry</td><td>Selects the body placed in the wind tunnel: circle, ellipse, wedge, plate, or wing.</td><td>Changes wake shape, snap epoch, flow separation, and benchmark comparison.</td></tr>
+              <tr><td>Training</td><td>Separate means each shape learns alone. Joint means shapes share one representation.</td><td>Joint training makes multiple shapes snap around the same epoch in the co-grokking graph.</td></tr>
+              <tr><td>Epoch</td><td>Moves through training time.</td><td>Before the snap, the PINN field is noisy or biased. After the snap, it aligns with the ground-truth flow.</td></tr>
+              <tr><td>Collocation</td><td>Controls how many physics-check points are used.</td><td>Too few points encourage overfitting. A useful middle range can create the delayed grokking phase.</td></tr>
+              <tr><td>Angle</td><td>Rotates the selected shape from \(-90^\circ\) to \(90^\circ\).</td><td>Tilts the body and wake, especially for the wing and plate.</td></tr>
+              <tr><td>Wind velocity</td><td>Sets the inlet-speed scale.</td><td>Higher speed strengthens the flow field and raises CFL risk in the guardrail panel.</td></tr>
+              <tr><td>Wake drag</td><td>Controls how strong the wake deficit is behind the body.</td><td>Higher drag deepens the low-speed wake and increases estimated force coefficients.</td></tr>
+              <tr><td>Flow option</td><td>Chooses incompressible behavior or a compressible warning flag.</td><td>The compressible flag increases caution because this browser model does not solve full compressible equations.</td></tr>
+              <tr><td>Turbulence model</td><td>Chooses a stylized laminar, k-epsilon, k-omega SST, or LES-like wake.</td><td>These modify wake intensity and reliability warnings. They are visual models, not full turbulence solvers.</td></tr>
+              <tr><td>Mesh level</td><td>Chooses coarse, medium, or fine visual mesh assumptions.</td><td>Updates y+, mesh-independence, residual, CFL, and mass-error estimates.</td></tr>
+              <tr><td>Validation mode</td><td>Selects a benchmark family such as cylinder, backward-facing step, airfoil, or pipe flow.</td><td>Documents which validation case would be needed before making a real accuracy claim.</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Main Views</span><small>what to look for</small></div>
+          <div class="report-body">
+            <ul class="report-list">
+              <li><strong>Live Wind Tunnel:</strong> compares the ground-truth surrogate field with the PINN prediction. The color bar goes from slow velocity to fast velocity, while streamlines show the flow direction.</li>
+              <li><strong>Shape Benchmark:</strong> shows how the same training state behaves across several geometries.</li>
+              <li><strong>Research Graphs:</strong> gives polished scientific plots for loss, accuracy, co-grokking, wake profiles, Reynolds effects, and spectral bias. Clicking a research figure zooms it.</li>
+              <li><strong>Diagnostics:</strong> shows activation spectrum, collocation scarcity, geometry snap comparison, and training phase behavior.</li>
+              <li><strong>Architecture:</strong> focuses on how the AI model is organized and trained.</li>
+              <li><strong>Physics:</strong> collects the governing flow and reliability equations.</li>
+              <li><strong>Report:</strong> explains the project, settings, equations, and limitations in one place.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Method and Variables</span><small>lab-report structure</small></div>
+          <div class="report-body">
+            <h3>Method</h3>
+            <p>The experiment is run as an interactive simulation study. First, a geometry is selected and placed in the wind tunnel. Next, training settings such as epoch, collocation density, and joint versus separate learning are adjusted. The dashboard then compares the visual ground-truth field with the PINN-style predicted field and updates the graphs that describe loss, accuracy, wake profiles, spectral behavior, and reliability warnings.</p>
+            <h3>Independent Variables</h3>
+            <ul class="report-list">
+              <li><strong>Geometry:</strong> circle, ellipse, wedge, plate, or wing.</li>
+              <li><strong>Training mode:</strong> separate learning or joint shared-representation learning.</li>
+              <li><strong>Epoch:</strong> training time from the beginning to late training.</li>
+              <li><strong>Collocation fraction:</strong> how strongly the model is checked against physics points.</li>
+              <li><strong>Angle, wind velocity, wake drag, flow option, turbulence model, and mesh level:</strong> advanced controls that change flow difficulty and reliability warnings.</li>
+            </ul>
+            <h3>Dependent Variables</h3>
+            <ul class="report-list">
+              <li><strong>Validation loss and accuracy:</strong> whether the learned field generalizes.</li>
+              <li><strong>Snap epoch:</strong> when grokking occurs.</li>
+              <li><strong>Wake-profile agreement:</strong> how closely the predicted velocity profile matches the truth curve.</li>
+              <li><strong>Spectral gap:</strong> how much high-frequency content the model still struggles to represent.</li>
+              <li><strong>Reliability indicators:</strong> residual, CFL, mass error, y+, drag/lift, and validation status.</li>
+            </ul>
+            <h3>Controlled Variables</h3>
+            <p>The dashboard keeps the domain, visual grid, base geometry definitions, and plotting framework consistent. This makes it easier to compare how shape and training settings affect the model behavior.</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Research Graph Analysis</span><small>loss, accuracy, and co-grokking</small></div>
+          <div class="report-body">
+            <h3>Figure 1: Grokking Loss and Generalization Accuracy</h3>
+            <p>The first research figure has two panels. The loss panel uses a logarithmic vertical axis, so each tick mark represents a power of ten. This is useful because training loss and validation loss can change by many orders of magnitude. The training loss drops early, showing that the model can fit the training examples quickly. The validation loss stays high for much longer, which means the model has not yet learned a rule that works outside the examples it memorized.</p>
+            <p>The accuracy panel shows the same story from a different angle. Training accuracy reaches a high value early, but validation accuracy remains low until the grokking snap. The important scientific point is that low training error does not automatically mean real understanding. Generalization appears only after the internal representation becomes simpler and more physically useful.</p>
+            <h3>Figure 2: Multi-Geometry Co-Grokking</h3>
+            <p>The co-grokking graph compares separate training against joint training. In separate training, each geometry has its own snap epoch because each flow pattern is learned independently. In joint training, multiple shapes share a representation, so they can generalize around the same training time. This supports the idea that a model can learn a reusable flow language rather than a separate trick for each body.</p>
+            <h3>Interpretation</h3>
+            <p>Together, these graphs show the difference between memorization and generalization. Memorization is local and fast. Generalization is delayed because the model must discover a structure that works across unseen points, unseen flow regions, or even multiple geometries.</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Wake and Turbulence Graph Analysis</span><small>physical flow complexity</small></div>
+          <div class="report-body">
+            <h3>Figure 3: Aerodynamic Wake Velocity Profiles</h3>
+            <p>The wake profile graph compares velocity slices at downstream positions. The horizontal axis is normalized velocity \(u/U_{\infty}\), and the vertical axis is height \(y\). The CFD truth curve shows the expected wake deficit: velocity drops in the region behind the object. The memorizing PINN curve is intentionally noisy and poorly aligned, showing a model that has not yet learned the real wake structure. The grokked PINN curve nearly overlaps the truth curve, showing successful generalization.</p>
+            <p>The near wake is harder because the flow changes rapidly close to the body. The far wake is smoother but still contains important structure. A good PINN should recover both the broad velocity deficit and the shape of the profile.</p>
+            <h3>Figure 4: Reynolds Number and Turbulence Effects</h3>
+            <p>The Reynolds graph shows that more complex flow regimes require more epochs before grokking. Low Reynolds number flow is usually smoother. Higher Reynolds number flow can separate, shed vortices, and create smaller scales. These small scales increase the learning burden.</p>
+            <p>The spectral-bias panel explains why. Neural networks often learn smooth, low-frequency patterns first. Turbulent wakes contain high-frequency content, so the model needs more training before it can represent them well. This is why the spectral gap grows with turbulence intensity.</p>
+            <h3>Scientific Meaning</h3>
+            <p>The physical takeaway is that the AI difficulty is not random. It is tied to the structure of the fluid problem. Smooth attached flow is easier; separated turbulent flow is harder.</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Diagnostics Graph Analysis</span><small>what the live checks mean</small></div>
+          <div class="report-body">
+            <h3>Activation Spectrum</h3>
+            <p>The activation spectrum shows which frequencies are present inside the model representation. A clean grokked model should concentrate power in meaningful low and mid frequencies. A memorizing model often has scattered or noisy high-frequency power because it is fitting details without a stable rule.</p>
+            <h3>Collocation Scarcity Regime</h3>
+            <p>Collocation points are the locations where the physics equations are checked. If there are too few points, the model can pass through the training data while violating physics elsewhere. If there are enough useful points, the physics residual guides the model toward a better field. The graph shows that grokking can be delayed when physics supervision is scarce.</p>
+            <h3>Geometry Snap Comparison</h3>
+            <p>This graph compares the snap epoch for each shape. Blunt or separated geometries usually snap later because their wakes are harder. Joint training lowers the gap by using shared structure across shapes.</p>
+            <h3>Training Phase Map</h3>
+            <p>The phase map summarizes training behavior. Early training is dominated by fitting and memorization. The middle phase forms a useful circuit or representation. The final grokking phase occurs when validation loss drops and the learned field becomes more physically consistent.</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>AI Equations Explained</span><small>PINN and grokking</small></div>
+          <div class="report-body equation-explain">
+            <div class="equation"><strong>Network Prediction</strong>\[\hat{\mathbf{q}}_{\theta}(x,y,t,g)=\big(\hat{u},\hat{v},\hat{p}\big)\]</div>
+            <p>The neural network receives position \((x,y)\), time \(t\), and geometry label \(g\). It predicts the flow quantities: horizontal velocity \(\hat{u}\), vertical velocity \(\hat{v}\), and pressure \(\hat{p}\). The symbol \(\theta\) means the trainable weights of the network.</p>
+
+            <div class="equation"><strong>PINN Objective</strong>\[\mathcal{L}_{\mathrm{total}}=\lambda_{\mathrm{data}}\mathcal{L}_{\mathrm{data}}+\lambda_{\mathrm{physics}}\mathcal{L}_{\mathrm{physics}}+\lambda_{\mathrm{bc}}\mathcal{L}_{\mathrm{bc}}+\lambda_{\mathrm{reg}}\|\theta\|_2^2\]</div>
+            <p>This is the training score the model tries to minimize. It combines matching data, obeying physics, satisfying boundary conditions, and keeping weights controlled. The \(\lambda\) values are weights that decide how much each part matters.</p>
+
+            <div class="equation"><strong>Data Fit</strong>\[\mathcal{L}_{\mathrm{data}}=\frac{1}{N}\sum_i\|\hat{\mathbf{q}}_{\theta}(\mathbf{x}_i)-\mathbf{q}_i^{\mathrm{CFD}}\|_2^2\]</div>
+            <p>This measures how far the neural prediction is from reference CFD samples. If this term is small, the model matches known examples well. Matching examples alone is not enough, because the model can still fail between points.</p>
+
+            <div class="equation"><strong>Physics Residual</strong>\[\mathcal{L}_{\mathrm{physics}}=\frac{1}{M}\sum_j\|\mathcal{N}[\hat{\mathbf{q}}_{\theta}](\mathbf{x}_j)\|_2^2\]</div>
+            <p>This checks whether the predicted flow violates the governing equations. \(\mathcal{N}\) is the physics operator, such as the Navier-Stokes residual. If this loss becomes small, the prediction is more physically consistent.</p>
+
+            <div class="equation"><strong>Co-Grokking Representation</strong>\[z_{\theta}=\phi_{\theta}(x,y,t,g),\qquad \hat{\mathbf{q}}_{\theta}=h_{\theta}(z_{\theta})\]</div>
+            <p>The model first builds an internal representation \(z_{\theta}\), then converts it into flow predictions. Co-grokking means different shapes begin to share a useful internal flow language, so validation improves together rather than one shape at a time.</p>
+
+            <div class="equation"><strong>Spectral Bias Diagnostic</strong>\[G_{\mathrm{spectral}}=\frac{\|\hat{a}_k\|_{\mathrm{high}}^2}{\|\hat{a}_k\|_{\mathrm{low}}^2}\]</div>
+            <p>This compares high-frequency structure to low-frequency structure in the learned representation. Smooth large-scale patterns are low frequency. Small turbulent wake details are high frequency. Neural networks often learn smooth patterns first, which is why complicated wakes can generalize later.</p>
+
+            <div class="equation"><strong>Activation Spectrum</strong>\[\hat{a}_{k}=\sum_{n=0}^{N-1}a_n e^{-i2\pi kn/N},\qquad P_k=\frac{|\hat{a}_k|^2}{\max_j|\hat{a}_j|^2}\]</div>
+            <p>This uses a Fourier transform to break hidden activations into frequencies. \(P_k\) is the normalized power at frequency \(k\). In simple words, it shows whether the model is using smooth structure or noisy fine detail.</p>
+
+            <div class="equation"><strong>Collocation Scarcity</strong>\[E_{\mathrm{grok}}(f)\propto f^{-1.85}\]</div>
+            <p>Here \(f\) is the fraction of physics collocation points. \(E_{\mathrm{grok}}\) is the epoch where generalization snaps into place. The formula says that with fewer useful physics points, grokking tends to take longer.</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Physics Equations Explained</span><small>flow and reliability</small></div>
+          <div class="report-body equation-explain">
+            <div class="equation"><strong>Incompressibility</strong>\[\nabla\cdot\mathbf{u}=\frac{\partial u}{\partial x}+\frac{\partial v}{\partial y}=0\]</div>
+            <p>This says fluid is not piling up or disappearing inside the domain. Whatever flows into a small region must flow out. It is the mass-conservation rule for incompressible flow.</p>
+
+            <div class="equation"><strong>Momentum Conservation</strong>\[\rho(\mathbf{u}\cdot\nabla)\mathbf{u}=-\nabla p+\mu\nabla^2\mathbf{u}\]</div>
+            <p>This is the Navier-Stokes momentum equation in simplified form. The left side is fluid motion carrying momentum. The right side says pressure gradients and viscosity change that motion.</p>
+
+            <div class="equation"><strong>Reynolds Number</strong>\[Re=\frac{\rho U L}{\mu}\]</div>
+            <p>Reynolds number compares inertia to viscosity. Low \(Re\) usually means smoother laminar flow. High \(Re\) usually means stronger separation, turbulence, and harder learning.</p>
+
+            <div class="equation"><strong>CFL Time-Step Guardrail</strong>\[\Delta t \le C_{\max}\frac{\Delta x}{\|\mathbf{u}\|+a}\]</div>
+            <p>This says the time step must be small enough that information does not jump too far in one update. \(C_{\max}\) is the stability limit, \(\Delta x\) is cell size, \(\|\mathbf{u}\|\) is flow speed, and \(a\) is wave speed for compressible cases.</p>
+
+            <div class="equation"><strong>Mass Conservation Error</strong>\[\epsilon_m=\frac{\left|\int_{\partial\Omega}\mathbf{u}\cdot\mathbf{n}\,dS\right|}{\int_{\partial\Omega}|\mathbf{u}\cdot\mathbf{n}|\,dS}\]</div>
+            <p>This measures whether total inflow and outflow balance. A small value is good. A large value means the simulated flow is not conserving mass reliably.</p>
+
+            <div class="equation"><strong>Drag and Lift</strong>\[C_D=\frac{F_D}{\frac{1}{2}\rho U^2A},\qquad C_L=\frac{F_L}{\frac{1}{2}\rho U^2A}\]</div>
+            <p>These convert drag and lift forces into dimensionless coefficients. That makes forces easier to compare across different speeds, densities, and body sizes.</p>
+
+            <div class="equation"><strong>Wall Resolution</strong>\[y^+=\frac{\rho u_{\tau}y}{\mu}\]</div>
+            <p>\(y^+\) measures how well the mesh resolves the near-wall boundary layer. If it is too high for the chosen turbulence model, wall shear and drag estimates become unreliable.</p>
+
+            <div class="equation"><strong>Residual Convergence</strong>\[\mathcal{R}^{(n)}=\|\mathbf{A}\mathbf{q}^{(n)}-\mathbf{b}\|_2\]</div>
+            <p>The residual measures how far the current solution is from satisfying the discretized equations. A decreasing residual is a sign that the numerical solution is settling down.</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head"><span>Reliability Statement</span><small>what can and cannot be claimed</small></div>
+          <div class="report-body">
+            <p>The dashboard can show trends, intuition, and interactive relationships between geometry, wake complexity, grokking, and model diagnostics. It can estimate residual-like warnings, CFL risk, mass error, and force coefficients for teaching purposes.</p>
+            <p>It should not claim production CFD accuracy. A real accuracy claim would require imported and cleaned geometry, adaptive finite-volume meshing, a mesh-independence study, benchmark validation, pressure and wall-shear convergence, and documented residual and conservation checks.</p>
+            <h3>Conclusion</h3>
+            <p>The main conclusion is that PINN generalization depends on both learning dynamics and flow physics. A model can look successful on training examples before it truly understands the flow. The grokking snap happens when the model discovers a representation that is simple enough, physical enough, and reusable enough to work beyond memorized samples.</p>
+            <p>The graphs support this conclusion from several directions. Loss and accuracy show the delayed validation transition. Wake profiles show the physical difference between memorization and a useful prediction. Reynolds and turbulence graphs explain why complex wakes delay learning. Diagnostics show how representation quality changes internally. The architecture and equation pages connect those observations to the PINN training objective.</p>
+            <h3>Future Work</h3>
+            <p>The next step would be connecting this dashboard to a real CFD backend. That backend would import external geometry, clean the mesh, run adaptive finite-volume solves, perform mesh-independence studies, and validate against benchmark cases. The current dashboard is best understood as a polished scientific explanation and interactive prototype.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div id="zoomOverlay" class="zoom-overlay" aria-hidden="true">
+    <div class="zoom-head">
+      <strong id="zoomTitle">Research Figure</strong>
+      <button id="zoomClose" class="zoom-close" type="button">Close</button>
+    </div>
+    <div class="zoom-stage">
+      <img id="zoomImage" alt="Zoomed research figure" />
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      geometry: "ellipse",
+      training: "separate",
+      epoch: 8500,
+      collocation: 30,
+      advanced: false,
+      angle: 0,
+      windSpeed: 18,
+      drag: 100,
+      flowModel: "incompressible",
+      turbulence: "laminar",
+      meshLevel: "medium",
+      validation: "none",
+      playing: true,
+      theme: "dark",
+      view: "wind",
+      t: 0,
+      fps: 60,
+      lastFrame: performance.now()
+    };
+
+    const GEOMS = {
+      circle: { label: "Circle", snap: 8000, color: "#55a7ff" },
+      ellipse: { label: "Ellipse", snap: 10000, color: "#27d8c6" },
+      triangle: { label: "Wedge", snap: 13000, color: "#b891ff" },
+      plate: { label: "Plate", snap: 14500, color: "#ff78a0" },
+      wing: { label: "Wing", snap: 16000, color: "#f4b84a" }
+    };
+
+    const COLORS = [
+      [28, 18, 101],   // deep stagnation blue
+      [31, 77, 172],   // pressure-side blue
+      [24, 178, 209],  // cyan shear
+      [29, 185, 120],  // green freestream
+      [180, 220, 52],  // yellow-green acceleration
+      [248, 190, 38],  // yellow-orange
+      [232, 64, 20],   // red high-speed band
+      [118, 20, 12]    // dark red maximum
+    ];
+
+    const XC = 2.2, YC = 0.0, X_LE = 1.4, X_TE = 3.0;
+    const C = X_TE - X_LE, T_MAX = 0.2;
+
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => Math.round(n).toLocaleString("en-US");
+    const SUPER = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+    const sci10 = (power) => "10" + String(power).split("").map(ch => SUPER[ch] || ch).join("");
+    const RESEARCH_TITLES = {
+      paperLossCanvas: "Physics-Informed Neural Network: Grokking Loss and Generalization Accuracy",
+      paperCoGrokCanvas: "Multi-Geometry Co-Grokking",
+      paperWakeCanvas: "Aerodynamic Wake Velocity Profiles",
+      paperTurbulenceCanvas: "Physical Aerodynamics vs PINN Generalization"
+    };
+    const FLOW_LABELS = {
+      incompressible: "Incompressible",
+      compressible: "Compressible flag"
+    };
+    const TURB_LABELS = {
+      laminar: "Laminar",
+      kepsilon: "k-epsilon",
+      sst: "k-omega SST",
+      les: "LES preview"
+    };
+    const MESH_LABELS = {
+      coarse: "Coarse",
+      medium: "Medium",
+      fine: "Fine"
+    };
+    const VALIDATION_LABELS = {
+      none: "No benchmark",
+      cylinder: "Cylinder flow",
+      step: "Backward-facing step",
+      airfoil: "Airfoil",
+      pipe: "Pipe flow"
+    };
+
+    function attackRad() {
+      return state.angle * Math.PI / 180;
+    }
+
+    function toLocal(x, y) {
+      const a = attackRad();
+      const dx = x - XC, dy = y - YC;
+      return [
+        XC + dx * Math.cos(a) + dy * Math.sin(a),
+        YC - dx * Math.sin(a) + dy * Math.cos(a)
+      ];
+    }
+
+    function toWorld(x, y) {
+      const a = attackRad();
+      return [
+        XC + (x - XC) * Math.cos(a) - (y - YC) * Math.sin(a),
+        YC + (x - XC) * Math.sin(a) + (y - YC) * Math.cos(a)
+      ];
+    }
+
+    function wakeCenter(x, xEnd = XC) {
+      return YC - Math.tan(attackRad() * 0.65) * Math.max(0, x - xEnd);
+    }
+
+    function turbulenceFactor() {
+      return ({ laminar: 0.78, kepsilon: 1.0, sst: 1.08, les: 1.22 }[state.turbulence] || 1);
+    }
+
+    function snapEpoch(geom = state.geometry) {
+      return state.training === "joint" ? 12000 : GEOMS[geom].snap;
+    }
+
+    function grokked(geom = state.geometry) {
+      return state.epoch >= snapEpoch(geom);
+    }
+
+    function scarcityLabel() {
+      const c = state.collocation;
+      if (c < 15) return "Overfit";
+      if (c <= 70) return "Grokking";
+      return "Standard";
+    }
+
+    function fbm(x, y, t, seed) {
+      let val = 0, amp = 0.5, freq = 1;
+      for (let i = 0; i < 4; i++) {
+        const phase = t * 0.18 * (i + 1);
+        val += amp * Math.sin(freq * x * 1.4 - phase + seed + i * 2.3)
+          * Math.cos(freq * y * 2.1 + phase * 0.7 + seed);
+        amp *= 0.52;
+        freq *= 2.07;
+      }
+      return Math.max(0, Math.min(1, val + 0.5));
+    }
+
+    function airfoilThickness(xc) {
+      return 5 * T_MAX * C * (
+        0.2969 * Math.sqrt(Math.max(0, xc)) -
+        0.1260 * xc -
+        0.3516 * xc * xc +
+        0.2843 * xc * xc * xc -
+        0.1015 * Math.pow(xc, 4)
+      );
+    }
+
+    function velocity(x, y, t, obstacle) {
+      const [lx, ly] = obstacle === "circle" ? [x, y] : toLocal(x, y);
+      const drag = (state.drag / 100) * turbulenceFactor();
+      const wind = (state.windSpeed / 18) * (state.flowModel === "compressible" ? 1.08 : 1);
+      let val = 0.85 * wind * (1 - Math.pow(y / 2.6, 4));
+      const dx = lx - XC, dy = ly - YC;
+
+      if (obstacle === "circle") {
+        const d = Math.hypot(dx, dy) / 0.55;
+        const bl = clamp(1 - Math.exp(-4.5 * (d - 1)));
+        const ts = clamp((x - 4.8) / 2.5);
+        const spread = 0.55 * (1 + 0.30 * dx);
+        const profile = Math.exp(-1.2 * Math.pow(Math.abs(y - wakeCenter(x, XC)) / Math.max(1e-5, spread), 2));
+        const turb = fbm(x / 2.2 + 0.30 * fbm(x / 5, y / 4, t, 1) - 0.15, y / 1.8, t, 4);
+        const defect = drag * ((1 - ts) * 0.70 * profile + ts * 0.70 * profile * (0.3 + 0.9 * turb));
+        if (x > XC) val -= defect * clamp(dx / 0.2);
+        val *= bl;
+        if (d <= 1) val = 0;
+      } else if (obstacle === "ellipse") {
+        const d = Math.pow(dx / 0.8, 2) + Math.pow(dy / 0.45, 2);
+        const bl = clamp(1 - Math.exp(-4 * (d - 1)));
+        const ts = clamp((x - 5.0) / 2.5);
+        const spread = 0.45 * (1 + 0.25 * dx);
+        const profile = Math.exp(-1.5 * Math.pow(Math.abs(y - wakeCenter(x, XC)) / Math.max(1e-5, spread), 2));
+        const turb = fbm(x / 2.5 + 0.25 * fbm(x / 5, y / 4, t, 1), y / 2.0, t, 5);
+        const defect = drag * ((1 - ts) * 0.65 * profile + ts * 0.65 * profile * (0.4 + 0.8 * turb));
+        if (x > XC) val -= defect * clamp(dx / 0.2);
+        val *= bl;
+        if (d <= 1) val = 0;
+      } else if (obstacle === "triangle") {
+        const inside = lx >= 1.65 && lx <= 2.75 && ly <= 0.5 * lx - 0.825 && ly >= -0.5 * lx + 0.825;
+        const dist = inside ? 0 : Math.hypot(Math.max(0, lx - 2.75), Math.max(0, ly - (0.5 * lx - 0.825)), Math.max(0, (-0.5 * lx + 0.825) - ly));
+        const bl = clamp(1 - Math.exp(-4.2 * dist));
+        const ts = clamp((x - 5.0) / 2.5);
+        const spread = 0.55 * (1 + 0.28 * (x - 2.75));
+        const profile = Math.exp(-1.3 * Math.pow(Math.abs(y - wakeCenter(x, 2.75)) / Math.max(1e-5, spread), 2));
+        const turb = fbm(x / 2.4, y / 1.9, t, 7);
+        const defect = drag * ((1 - ts) * 0.70 * profile + ts * 0.70 * profile * (0.35 + 0.85 * turb));
+        if (x > 2.75) val -= defect * clamp((x - 2.75) / 0.3);
+        val *= bl;
+        if (inside) val = 0;
+      } else if (obstacle === "plate") {
+        const inside = lx >= 2.16 && lx <= 2.24 && Math.abs(ly) <= 0.55;
+        const dist = inside ? 0 : Math.hypot(Math.max(0, Math.abs(lx - 2.2) - 0.04), Math.max(0, Math.abs(ly) - 0.55));
+        const bl = clamp(1 - Math.exp(-4.5 * dist));
+        const ts = clamp((x - 4.6) / 2.5);
+        const spread = 0.65 * (1 + 0.32 * dx);
+        const profile = Math.exp(-1.0 * Math.pow(Math.abs(y - wakeCenter(x, 2.24)) / Math.max(1e-5, spread), 2));
+        const turb = fbm(x / 2.0, y / 1.6, t, 8);
+        const defect = drag * ((1 - ts) * 0.75 * profile + ts * 0.75 * profile * (0.25 + 0.95 * turb));
+        if (x > 2.24) val -= defect * clamp((x - 2.24) / 0.15);
+        val *= bl;
+        if (inside) val = 0;
+      } else if (obstacle === "wing") {
+        const xc = clamp((lx - X_LE) / C);
+        const yt = airfoilThickness(xc);
+        const inside = lx >= X_LE && lx <= X_TE && Math.abs(ly) <= yt;
+        let dist = 0;
+        if (lx < X_LE) dist = Math.hypot(lx - X_LE, ly);
+        else if (lx > X_TE) dist = Math.hypot(lx - X_TE, ly);
+        else dist = Math.abs(ly) - yt;
+        if (inside) dist = 0;
+        const bl = clamp(1 - Math.exp(-5 * dist));
+        const ts = clamp((x - 5.2) / 2.5);
+        const [teX] = toWorld(X_TE, 0);
+        const center = wakeCenter(x, teX);
+        const spread = (0.32 + 0.0018 * Math.abs(state.angle)) * (1 + 0.20 * (x - teX));
+        const profile = Math.exp((-2.0 + 0.004 * Math.abs(state.angle)) * Math.pow(Math.abs(y - center) / Math.max(1e-5, spread), 2));
+        const strength = (0.45 + 0.006 * Math.abs(state.angle)) * drag;
+        const turb = fbm(x / 2.7, y / 2.1, t, 6);
+        const defect = (1 - ts) * strength * profile + ts * strength * profile * (0.45 + 0.75 * turb);
+        if (x > teX) val -= defect * clamp((x - teX) / 0.45);
+        val *= bl;
+        if (inside) val = 0;
+      }
+
+      return clamp(val);
+    }
+
+    function coherentError(x, y, t, obstacle, progress) {
+      const seed = { circle: 11, ellipse: 13, triangle: 17, plate: 19, wing: 23 }[obstacle] || 7;
+      const low = Math.sin(1.8 * x - 0.9 * t + seed) * Math.cos(2.4 * y + 0.55 * t);
+      const wake = Math.sin(4.2 * x - 1.7 * t + seed * 0.37) * Math.cos(5.1 * y - 0.8 * t);
+      const fine = fbm(x / 1.8 + seed * 0.01, y / 1.3, t * 1.2, seed) - 0.5;
+      const downstream = clamp((x - 2.4) / 4.8);
+      return (0.34 * low + downstream * (0.46 * wake + 0.8 * fine)) * (1 - 0.55 * progress);
+    }
+
+    function clamp(v, lo = 0, hi = 1) {
+      return Math.max(lo, Math.min(hi, v));
+    }
+
+    function colorize(v) {
+      const n = COLORS.length - 1;
+      const scaled = clamp(v) * n;
+      const idx = Math.min(n - 1, Math.floor(scaled));
+      const frac = scaled - idx;
+      const c1 = COLORS[idx], c2 = COLORS[idx + 1];
+      return [
+        c1[0] + frac * (c2[0] - c1[0]),
+        c1[1] + frac * (c2[1] - c1[1]),
+        c1[2] + frac * (c2[2] - c1[2])
+      ];
+    }
+
+    function contourColor(v) {
+      const [r, g, b] = colorize(0.18 + 0.76 * clamp(v));
+      return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 0.74)`;
+    }
+
+    function drawField(canvas, obstacle, isPINN, t) {
+      const ctx = canvas.getContext("2d", { alpha: false });
+      const w = canvas.width, h = canvas.height;
+      let image = canvas._image;
+      if (!image || image.width !== w || image.height !== h) {
+        image = ctx.createImageData(w, h);
+        canvas._image = image;
+      }
+      const data = image.data;
+      const snap = snapEpoch(obstacle);
+      const isGrokked = state.epoch >= snap;
+      const progress = clamp(state.epoch / snap);
+      const scarcity = 1 + 1.15 * (0.3 / Math.max(state.collocation / 100, 0.05) - 1);
+      const noiseAmp = clamp(0.55 * (1 - 0.25 * progress) * scarcity, 0, 1.45);
+
+      for (let py = 0; py < h; py++) {
+        const y = -2.5 + 5 * (py / (h - 1));
+        for (let px = 0; px < w; px++) {
+          const x = 10 * (px / (w - 1));
+          let v = velocity(x, y, t, obstacle);
+          if (isPINN && !isGrokked) {
+            const error = coherentError(x, y, t, obstacle, progress) * noiseAmp * 1.85;
+            v = v * (0.08 + 0.18 * progress) + error;
+          }
+          const [r, g, b] = colorize(v);
+          const row = h - 1 - py;
+          const off = (row * w + px) * 4;
+          data[off] = r;
+          data[off + 1] = g;
+          data[off + 2] = b;
+          data[off + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, 0, 0);
+      if (!isPINN || isGrokked) drawStreamlines(ctx, obstacle, false, t);
+      drawObstacle(ctx, obstacle, isGrokked || !isPINN);
+    }
+
+    function mapX(x, w) { return (x / 10) * w; }
+    function mapY(y, h) { return h - 1 - ((y + 2.5) / 5) * h; }
+
+    function solidMask(x, y, obstacle) {
+      const [lx, ly] = obstacle === "circle" ? [x, y] : toLocal(x, y);
+      const dx = lx - XC, dy = ly - YC;
+      if (obstacle === "circle") return Math.hypot(dx, dy) <= 0.55;
+      if (obstacle === "ellipse") return Math.pow(dx / 0.8, 2) + Math.pow(dy / 0.45, 2) <= 1;
+      if (obstacle === "triangle") return lx >= 1.65 && lx <= 2.75 && ly <= 0.5 * lx - 0.825 && ly >= -0.5 * lx + 0.825;
+      if (obstacle === "plate") return lx >= 2.16 && lx <= 2.24 && Math.abs(ly) <= 0.55;
+      if (obstacle === "wing") {
+        const xc = clamp((lx - X_LE) / C);
+        const yt = airfoilThickness(xc);
+        return lx >= X_LE && lx <= X_TE && Math.abs(ly) <= yt;
+      }
+      return false;
+    }
+
+    function physicsVector(x, y, t, obstacle) {
+      const drag = (state.drag / 100) * turbulenceFactor();
+      const [lx, ly] = obstacle === "circle" ? [x, y] : toLocal(x, y);
+      let u = (state.windSpeed / 18) * (state.flowModel === "compressible" ? 1.08 : 1);
+      let v = -0.05 * Math.pow(y / 2.6, 3);
+      const dx = lx - XC, dy = ly - YC;
+
+      if (obstacle === "circle" || obstacle === "ellipse") {
+        const sx = obstacle === "ellipse" ? 0.85 : 0.62;
+        const sy = obstacle === "ellipse" ? 0.50 : 0.62;
+        const Xn = dx / sx;
+        const Yn = dy / sy;
+        const r2 = Math.max(0.42, Xn * Xn + Yn * Yn);
+        const repel = 0.95 / (r2 * r2);
+        u += repel * (Yn * Yn - Xn * Xn);
+        v += 1.9 * repel * Xn * Yn * (sy / sx);
+        const wake = clamp((x - XC) / 4.2);
+        const core = Math.exp(-Math.pow((y - wakeCenter(x, XC)) / (0.42 + 0.20 * Math.max(0, x - XC)), 2));
+        u -= drag * (obstacle === "circle" ? 0.58 : 0.42) * wake * core;
+        v += 0.12 * wake * core * Math.sin(3.2 * (x - XC) - 1.3 * t) * Math.sign(dy || 1);
+      } else if (obstacle === "plate") {
+        const upstream = Math.exp(-Math.pow((lx - 2.18) / 0.65, 2)) * Math.exp(-Math.pow(ly / 0.85, 2));
+        v += 0.75 * upstream * Math.sign(y || 1);
+        u -= 0.45 * upstream;
+        const wake = clamp((x - 2.24) / 4.5);
+        const spread = 0.58 + 0.25 * Math.max(0, x - 2.24);
+        const core = Math.exp(-Math.pow((y - wakeCenter(x, 2.24)) / spread, 2));
+        u -= drag * 0.72 * wake * core;
+        v += 0.24 * wake * core * Math.sin(3.8 * (x - 2.24) - 1.9 * t);
+      } else if (obstacle === "triangle") {
+        const nose = Math.exp(-Math.pow((lx - 1.65) / 0.75, 2)) * Math.exp(-Math.pow(ly / 0.75, 2));
+        v += 0.42 * nose * Math.sign(y || 1);
+        u -= 0.22 * nose;
+        const wake = clamp((x - 2.75) / 4.8);
+        const spread = 0.45 + 0.23 * Math.max(0, x - 2.75);
+        const core = Math.exp(-Math.pow((y - wakeCenter(x, 2.75)) / spread, 2));
+        u -= drag * 0.55 * wake * core;
+        v += 0.18 * wake * core * Math.sin(3.5 * (x - 2.75) - 1.4 * t);
+      } else if (obstacle === "wing") {
+        const alpha = attackRad();
+        const [teX] = toWorld(X_TE, 0);
+        const chordMask = Math.exp(-Math.pow((lx - 2.15) / 1.05, 2));
+        const thickness = Math.exp(-Math.pow((ly - 0.08 * Math.sin(alpha)) / 0.34, 2));
+        v += (-0.012 * state.angle + 0.02) * chordMask * thickness;
+        v += 0.22 * chordMask * ly * Math.exp(-Math.pow(ly / 0.45, 2));
+        const wake = clamp((x - teX) / 4.8);
+        const spread = 0.24 + 0.002 * Math.abs(state.angle) + 0.13 * Math.max(0, x - teX);
+        const core = Math.exp(-Math.pow((y - wakeCenter(x, teX)) / spread, 2));
+        u -= drag * (0.20 + 0.004 * Math.abs(state.angle)) * wake * core;
+        v += (-0.010 * state.angle + 0.03) * wake * core;
+      }
+
+      if (solidMask(x, y, obstacle)) return { u: 0, v: 0, solid: true };
+      const speed = Math.hypot(u, v) || 1;
+      return { u: u / speed, v: v / speed, solid: false };
+    }
+
+    function drawStreamlines(ctx, obstacle, uncertain, t) {
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      const seeds = [];
+      for (let y = -2.32; y <= 2.33; y += 0.23) seeds.push(y);
+      const phase = (t * 0.10) % 0.22;
+      ctx.save();
+      ctx.globalAlpha = 0.82;
+      ctx.lineWidth = Math.max(0.38, w / 1550);
+      ctx.lineCap = "round";
+
+      for (const y0 of seeds) {
+        let x = -0.15 + phase;
+        let y = y0;
+        let last = null;
+        for (let i = 0; i < 210; i++) {
+          if (x > 10.15 || y < -2.48 || y > 2.48) break;
+          const vec = physicsVector(x, y, t, obstacle);
+          if (vec.solid) {
+            last = null;
+            x += 0.045;
+            y += 0.05 * Math.sign(y || 1);
+            continue;
+          }
+
+          const px = mapX(x, w);
+          const py = mapY(y, h);
+          if (last) {
+            const mag = velocity(x, y, t, obstacle);
+            ctx.strokeStyle = contourColor(mag);
+            ctx.beginPath();
+            ctx.moveTo(last[0], last[1]);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+          }
+          last = [px, py];
+
+          const ds = 0.045 + 0.018 * clamp(state.windSpeed / 18, 0.2, 2.2);
+          x += vec.u * ds;
+          y += vec.v * ds;
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawObstacle(ctx, obstacle, grokkedState) {
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      ctx.save();
+      ctx.strokeStyle = grokkedState ? "#27d8c6" : "#ff5d7a";
+      ctx.fillStyle = "#05070b";
+      ctx.lineWidth = Math.max(1.4, w / 360);
+      ctx.beginPath();
+      ctx.moveTo(mapX(0, w), mapY(2.5, h)); ctx.lineTo(mapX(10, w), mapY(2.5, h));
+      ctx.moveTo(mapX(0, w), mapY(-2.5, h)); ctx.lineTo(mapX(10, w), mapY(-2.5, h));
+      ctx.strokeStyle = "#273041"; ctx.stroke();
+      ctx.strokeStyle = grokkedState ? "#27d8c6" : "#ff5d7a";
+
+      if (obstacle === "circle") {
+        ctx.beginPath(); ctx.arc(mapX(XC, w), mapY(YC, h), 0.55 / 10 * w, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else if (obstacle === "ellipse") {
+        ctx.beginPath(); ctx.ellipse(mapX(XC, w), mapY(YC, h), 0.8 / 10 * w, 0.45 / 5 * h, -attackRad(), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else if (obstacle === "triangle") {
+        polygon(ctx, [[1.65, 0], [2.75, 0.55], [2.75, -0.55]].map(([x, y]) => toWorld(x, y)), w, h);
+      } else if (obstacle === "plate") {
+        polygon(ctx, [[2.16, 0.55], [2.24, 0.55], [2.24, -0.55], [2.16, -0.55]].map(([x, y]) => toWorld(x, y)), w, h);
+      } else {
+        const pointsTop = [], pointsBot = [];
+        for (let i = 0; i <= 54; i++) {
+          const xc = i / 54, x = X_LE + xc * C, yt = airfoilThickness(xc);
+          let [px, py] = toWorld(x, yt);
+          let [qx, qy] = toWorld(x, -yt);
+          pointsTop.push([px, py]); pointsBot.unshift([qx, qy]);
+        }
+        polygon(ctx, pointsTop.concat(pointsBot), w, h);
+      }
+      ctx.restore();
+    }
+
+    function polygon(ctx, points, w, h) {
+      ctx.beginPath();
+      points.forEach(([x, y], i) => {
+        if (i === 0) ctx.moveTo(mapX(x, w), mapY(y, h));
+        else ctx.lineTo(mapX(x, w), mapY(y, h));
+      });
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+
+    function axis(ctx, pad, labelX, labelY) {
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      const pal = chartPalette();
+      ctx.strokeStyle = pal.axis;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad, pad); ctx.lineTo(pad, h - pad); ctx.lineTo(w - pad, h - pad);
+      ctx.stroke();
+      ctx.strokeStyle = pal.grid;
+      for (let i = 1; i < 5; i++) {
+        const gx = pad + (w - 2 * pad) * i / 5;
+        const gy = pad + (h - 2 * pad) * i / 5;
+        ctx.beginPath(); ctx.moveTo(gx, pad); ctx.lineTo(gx, h - pad); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pad, gy); ctx.lineTo(w - pad, gy); ctx.stroke();
+      }
+      ctx.fillStyle = pal.text;
+      ctx.font = "600 13px system-ui";
+      if (labelX) ctx.fillText(labelX, w - pad - 118, h - 13);
+      if (labelY) {
+        ctx.save(); ctx.translate(15, pad + 134); ctx.rotate(-Math.PI / 2); ctx.fillText(labelY, 0, 0); ctx.restore();
+      }
+    }
+
+    function axisTicks(ctx, pad, xLabels, yLabels) {
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      const pal = chartPalette();
+      ctx.fillStyle = pal.muted;
+      ctx.strokeStyle = pal.axis;
+      ctx.lineWidth = 1;
+      ctx.font = "11px system-ui";
+      xLabels.forEach((label, i) => {
+        const x = pad + (w - 2 * pad) * i / Math.max(1, xLabels.length - 1);
+        ctx.beginPath(); ctx.moveTo(x, h - pad); ctx.lineTo(x, h - pad + 5); ctx.stroke();
+        ctx.fillText(label, x - 10, h - pad + 20);
+      });
+      yLabels.forEach((label, i) => {
+        const y = h - pad - (h - 2 * pad) * i / Math.max(1, yLabels.length - 1);
+        ctx.beginPath(); ctx.moveTo(pad - 5, y); ctx.lineTo(pad, y); ctx.stroke();
+        ctx.fillText(label, 8, y + 4);
+      });
+    }
+
+    function clearChart(canvas) {
+      const ctx = canvas.getContext("2d");
+      const pal = chartPalette();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = pal.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return ctx;
+    }
+
+    function chartPalette() {
+      return state.theme === "dark"
+        ? { bg: "#05070b", panel: "#070b13", text: "#f8fafc", muted: "#cbd5e1", grid: "rgba(148,163,184,0.18)", axis: "#94a3b8", legendBg: "rgba(2,6,23,0.82)", legendBorder: "#334155" }
+        : { bg: "#f8fafc", panel: "#f8fafc", text: "#0f172a", muted: "#475569", grid: "#e5edf5", axis: "#94a3b8", legendBg: "rgba(255,255,255,0.88)", legendBorder: "#cbd5e1" };
+    }
+
+    function clearDarkChart(canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#0b1020";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return ctx;
+    }
+
+    function drawLossChart() {
+      const canvas = $("lossCanvas"), ctx = clearChart(canvas);
+      const pal = chartPalette();
+      const w = canvas.width, h = canvas.height, pad = 42;
+      axis(ctx, pad, "Epoch", "log₁₀ Loss");
+      axisTicks(ctx, pad, ["0", "5k", "10k", "15k", "20k"], ["10⁻⁵", "10⁻³", "10⁻¹", "10⁰"]);
+      plotLine(ctx, makeSeries((e) => 0.0001 + Math.exp(-e / 1200)), "#27d8c6", pad, 0, 20000, 1e-5, 2.2, true);
+      plotLine(ctx, makeSeries((e) => e < 4000 ? 0.8 + 0.08 * Math.sin(e / 450) : e < 11500 ? 0.8 * Math.exp(-3.5 * ((e - 4000) / 7500)) : 0.025), "#b891ff", pad, 0, 20000, 1e-5, 2.2, true);
+      plotLine(ctx, makeSeries((e) => e < snapEpoch() ? 0.95 + 0.03 * Math.sin(e / 400) : 0.02 + 0.93 * Math.exp(-(e - snapEpoch()) / 1500)), "#ff5d7a", pad, 0, 20000, 1e-5, 2.2, true);
+      const x = scale(state.epoch, 0, 20000, pad, w - pad);
+      ctx.strokeStyle = pal.text; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, h - pad); ctx.stroke(); ctx.globalAlpha = 1;
+      chartLegend(ctx, [["Training Fit", "#27d8c6"], ["PDE Residual", "#b891ff"], ["Validation", "#ff5d7a"]], pad, 22);
+    }
+
+    function drawProfileChart() {
+      const canvas = $("profileCanvas"), ctx = clearChart(canvas);
+      const pal = chartPalette();
+      const w = canvas.width, h = canvas.height, pad = 38;
+      axis(ctx, pad, "u/U∞", "y");
+      axisTicks(ctx, pad, ["0", "0.5", "1"], ["-2", "0", "2"]);
+      const ptsTruth = [], ptsPINN = [];
+      const snap = snapEpoch(), isG = grokked(), progress = clamp(state.epoch / snap);
+      for (let i = 0; i <= 120; i++) {
+        const y = -2.35 + 4.7 * i / 120;
+        const v = velocity(6.0, y, state.t, state.geometry);
+        let p = v;
+        if (!isG) p = v * (0.08 + 0.18 * progress) + coherentError(6.0, y, state.t, state.geometry, progress) * 0.45;
+        ptsTruth.push([v, y]); ptsPINN.push([clamp(p), y]);
+      }
+      plotXY(ctx, ptsTruth, pal.text, pad, 0, 1, -2.5, 2.5);
+      plotXY(ctx, ptsPINN, isG ? "#27d8c6" : "#ff5d7a", pad, 0, 1, -2.5, 2.5);
+      chartLegend(ctx, [["CFD", pal.text], ["PINN", isG ? "#27d8c6" : "#ff5d7a"]], pad, 20);
+    }
+
+    function drawSpectrumChart() {
+      const canvas = $("spectrumCanvas"), ctx = clearChart(canvas);
+      const pad = 46;
+      axis(ctx, pad, "Frequency k", "Power Pₖ");
+      axisTicks(ctx, pad, ["0", "6", "12", "18", "24"], ["0", "0.5", "1"]);
+      const isG = grokked();
+      const pts = [];
+      for (let k = 0; k <= 24; k++) {
+        let p = isG
+          ? peak(k, 3, 1.0) + peak(k, 7, 0.72) + peak(k, 11, 0.36)
+          : 0.18 + 0.35 * Math.abs(Math.sin(k * 1.73)) + 0.25 * fbm(k, 0.2, state.t, 31);
+        pts.push([k, clamp(p)]);
+      }
+      plotXY(ctx, pts, isG ? "#27d8c6" : "#ff5d7a", pad, 0, 24, 0, 1);
+    }
+
+    function drawScarcityChart() {
+      const canvas = $("scarcityCanvas"), ctx = clearChart(canvas);
+      const pad = 46, pts = [];
+      axis(ctx, pad, "Collocation Fraction (%)", "Epochs");
+      axisTicks(ctx, pad, ["0", "25", "50", "75", "100"], ["0", "10k", "20k", "30k"]);
+      shade(ctx, pad, 0, 15, "rgba(255,93,122,0.10)");
+      shade(ctx, pad, 15, 70, "rgba(244,184,74,0.09)");
+      shade(ctx, pad, 70, 100, "rgba(114,223,114,0.08)");
+      for (let c = 15; c <= 90; c += 5) {
+        const f = c / 100;
+        const e = c <= 70 ? 2200 * Math.pow(f, -1.85) : 800 + 200 * (1 - f);
+        pts.push([c, e]);
+      }
+      plotXY(ctx, pts, "#f4b84a", pad, 0, 100, 0, 30000);
+      const x = scale(state.collocation, 0, 100, pad, canvas.width - pad);
+      ctx.strokeStyle = "#ff5d7a"; ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, canvas.height - pad); ctx.stroke();
+    }
+
+    function drawSnapChart() {
+      const canvas = $("snapCanvas"), ctx = clearChart(canvas);
+      const pad = 54, names = Object.keys(GEOMS), max = 20000;
+      axis(ctx, pad, "", "Epoch");
+      axisTicks(ctx, pad, ["", "", "", "", "", ""], ["0", "10k", "20k"]);
+      names.forEach((g, i) => {
+        const x = scale(i, -0.5, names.length - 0.5, pad, canvas.width - pad);
+        const ySeparate = scale(GEOMS[g].snap, 0, max, canvas.height - pad, pad);
+        const yJoint = scale(12000, 0, max, canvas.height - pad, pad);
+        ctx.fillStyle = GEOMS[g].color;
+        ctx.fillRect(x - 15, ySeparate, 12, canvas.height - pad - ySeparate);
+        ctx.fillStyle = "#27d8c6";
+        ctx.fillRect(x + 3, yJoint, 12, canvas.height - pad - yJoint);
+        ctx.fillStyle = "#475569";
+        ctx.save(); ctx.translate(x - 20, canvas.height - 14); ctx.rotate(-0.45); ctx.fillText(GEOMS[g].label, 0, 0); ctx.restore();
+      });
+      chartLegend(ctx, [["Separate", "#f4b84a"], ["Joint", "#27d8c6"]], pad, 22);
+    }
+
+    function drawPhaseChart() {
+      const canvas = $("phaseCanvas"), ctx = clearChart(canvas);
+      const pal = chartPalette();
+      const pad = 46;
+      axis(ctx, pad, "Epoch", "Relative Value");
+      axisTicks(ctx, pad, ["0", "5k", "10k", "15k", "20k"], ["0", "2.5", "5"]);
+      plotLine(ctx, makeSeries((e) => e < 4000 ? 1 + 3.5 * e / 4000 : e < 11500 ? 4.5 - 3.2 * ((e - 4000) / 7500) : 1.3), "#f4b84a", pad, 0, 20000, 0, 5, false);
+      plotLine(ctx, makeSeries((e) => e < 4000 ? 4.1 : e < 11500 ? 4.1 * Math.exp(-3.5 * ((e - 4000) / 7500)) : 0.15), "#27d8c6", pad, 0, 20000, 0, 5, false);
+      const x = scale(state.epoch, 0, 20000, pad, canvas.width - pad);
+      ctx.strokeStyle = pal.text; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, canvas.height - pad); ctx.stroke(); ctx.globalAlpha = 1;
+      chartLegend(ctx, [["Weight Norm", "#f4b84a"], ["PDE Residual", "#27d8c6"]], pad, 22);
+    }
+
+    function clearPaper(canvas) {
+      const ctx = canvas.getContext("2d");
+      const pal = chartPalette();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = pal.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = pal.text;
+      ctx.strokeStyle = pal.axis;
+      ctx.lineWidth = 1.5;
+      return ctx;
+    }
+
+    function paperPanel(ctx, x, y, w, h, xLabel, yLabel, xTicks, yTicks, yLog = false) {
+      const pal = chartPalette();
+      ctx.fillStyle = pal.panel;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = pal.axis;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, w, h);
+      ctx.strokeStyle = pal.grid;
+      ctx.lineWidth = 1;
+      ctx.font = "17px system-ui";
+      ctx.fillStyle = pal.text;
+      xTicks.forEach(t => {
+        const px = scale(t.value, t.min, t.max, x, x + w);
+        ctx.beginPath(); ctx.moveTo(px, y); ctx.lineTo(px, y + h); ctx.stroke();
+        ctx.strokeStyle = pal.axis;
+        ctx.beginPath(); ctx.moveTo(px, y + h); ctx.lineTo(px, y + h + 6); ctx.stroke();
+        ctx.strokeStyle = pal.grid;
+        ctx.fillText(t.label, px - 18, y + h + 30);
+      });
+      yTicks.forEach(t => {
+        const py = yLog
+          ? scale(Math.log10(t.value), Math.log10(t.min), Math.log10(t.max), y + h, y)
+          : scale(t.value, t.min, t.max, y + h, y);
+        ctx.beginPath(); ctx.moveTo(x, py); ctx.lineTo(x + w, py); ctx.stroke();
+        ctx.strokeStyle = pal.axis;
+        ctx.beginPath(); ctx.moveTo(x - 6, py); ctx.lineTo(x, py); ctx.stroke();
+        ctx.strokeStyle = pal.grid;
+        ctx.fillText(t.label, x - 64, py + 6);
+      });
+      ctx.font = "800 22px system-ui";
+      ctx.fillStyle = pal.text;
+      ctx.fillText(xLabel, x + w / 2 - ctx.measureText(xLabel).width / 2, y + h + 62);
+      ctx.save();
+      ctx.translate(x - 82, y + h / 2 + ctx.measureText(yLabel).width / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(yLabel, 0, 0);
+      ctx.restore();
+    }
+
+    function paperPlot(ctx, pts, box, ranges, color, width = 4, dash = []) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      pts.forEach(([xv, yv], i) => {
+        const x = scale(xv, ranges.xmin, ranges.xmax, box.x, box.x + box.w);
+        const rawY = ranges.yLog ? Math.log10(Math.max(yv, ranges.ymin)) : yv;
+        const ymin = ranges.yLog ? Math.log10(ranges.ymin) : ranges.ymin;
+        const ymax = ranges.yLog ? Math.log10(ranges.ymax) : ranges.ymax;
+        const y = scale(rawY, ymin, ymax, box.y + box.h, box.y);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function paperLegend(ctx, items, x, y) {
+      const pal = chartPalette();
+      const rowH = 25;
+      const w = Math.max(...items.map(([label]) => ctx.measureText(label).width)) + 72;
+      const h = items.length * rowH + 16;
+      ctx.fillStyle = pal.legendBg;
+      ctx.strokeStyle = pal.legendBorder;
+      roundRect(ctx, x, y, w, h, 6);
+      ctx.fill(); ctx.stroke();
+      ctx.font = "18px system-ui";
+      items.forEach(([label, color, dash], i) => {
+        const yy = y + 24 + i * rowH;
+        ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.setLineDash(dash || []);
+        ctx.beginPath(); ctx.moveTo(x + 16, yy - 6); ctx.lineTo(x + 56, yy - 6); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = pal.text; ctx.fillText(label, x + 68, yy);
+      });
+    }
+
+    function paperText(ctx, text, x, y, color, size = 22, weight = 800) {
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${size}px system-ui`;
+      ctx.fillText(text, x, y);
+    }
+
+    function phaseStrip(ctx, box, snap = snapEpoch()) {
+      const stripY = box.y - 34;
+      const stripH = 18;
+      const phases = [
+        [0, 2000, "Memorization", "#2563eb", "#eaf2ff"],
+        [2000, snap, "Circuit formation", "#d97706", "#fff7ed"],
+        [snap, 20000, "Grok", "#16a34a", "#eaf8f5"]
+      ];
+      phases.forEach(([a, b, label, color, fill]) => {
+        const x1 = scale(a, 0, 20000, box.x, box.x + box.w);
+        const x2 = scale(b, 0, 20000, box.x, box.x + box.w);
+        ctx.fillStyle = fill;
+        ctx.fillRect(x1, stripY, Math.max(8, x2 - x1), stripH);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x1, stripY, Math.max(8, x2 - x1), stripH);
+        ctx.fillStyle = color;
+        ctx.font = "800 12px system-ui";
+        ctx.fillText(label, x1 + 5, stripY - 5);
+      });
+    }
+
+    function paperMultiline(ctx, lines, x, y, color, size = 20, weight = 500, lineHeight = 24) {
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${size}px system-ui`;
+      lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineHeight));
+    }
+
+    function makeEpochCurve(fn, step = 100) {
+      const pts = [];
+      for (let e = 0; e <= 20000; e += step) pts.push([e, fn(e)]);
+      return pts;
+    }
+
+    function drawPaperLossAccuracy() {
+      const canvas = $("paperLossCanvas"), ctx = clearPaper(canvas);
+      const pal = chartPalette();
+      ctx.font = "800 30px system-ui";
+      ctx.fillStyle = pal.text;
+      ctx.fillText("Physics-Informed Neural Network: Grokking Loss and Generalization Accuracy", 320, 38);
+      const left = { x: 84, y: 105, w: 650, h: 360 };
+      const right = { x: 840, y: 105, w: 650, h: 360 };
+      const xTicks = [0, 5000, 10000, 15000, 20000].map(v => ({ value: v, label: v === 0 ? "0" : `${v / 1000}k`, min: 0, max: 20000 }));
+      const yLossTicks = [1, 1e-2, 1e-4, 1e-6].map(v => ({ value: v, label: sci10(Math.round(Math.log10(v))), min: 1e-7, max: 2 }));
+      const yAccTicks = [0, 25, 50, 75, 100].map(v => ({ value: v, label: String(v), min: 0, max: 105 }));
+      paperText(ctx, "A: Grokking Loss Optimization Lag", left.x + 120, 80, pal.text, 28);
+      paperText(ctx, "B: Generalization Phase Transition", right.x + 120, 80, pal.text, 28);
+      paperPanel(ctx, left.x, left.y, left.w, left.h, "Training Epochs", "log₁₀ Loss Magnitude", xTicks, yLossTicks, true);
+      paperPanel(ctx, right.x, right.y, right.w, right.h, "Training Epochs", "Accuracy (%)", xTicks, yAccTicks, false);
+      shadePaper(ctx, left, 0, 2000, "#eaf2ff"); shadePaper(ctx, left, 2000, snapEpoch(), "#fbfaf7"); shadePaper(ctx, left, snapEpoch(), 20000, "#eaf8f5");
+      shadePaper(ctx, right, 0, 2000, "#eaf2ff"); shadePaper(ctx, right, 2000, snapEpoch(), "#fbfaf7"); shadePaper(ctx, right, snapEpoch(), 20000, "#eaf8f5");
+      paperPlot(ctx, makeEpochCurve(e => 1e-6 + 0.98 / (1 + Math.exp((e - 850) / 220))), left, { xmin: 0, xmax: 20000, ymin: 1e-7, ymax: 2, yLog: true }, "#2563eb", 4);
+      paperPlot(ctx, makeEpochCurve(e => e < snapEpoch() ? 0.88 + 0.02 * Math.sin(e / 1300) : 0.88 * Math.exp(-(e - snapEpoch()) / 650) + 1e-6), left, { xmin: 0, xmax: 20000, ymin: 1e-7, ymax: 2, yLog: true }, "#dc2626", 4);
+      paperPlot(ctx, makeEpochCurve(e => 100 / (1 + Math.exp(-(e - 1350) / 190))), right, { xmin: 0, xmax: 20000, ymin: 0, ymax: 105 }, "#2563eb", 4);
+      paperPlot(ctx, makeEpochCurve(e => e < snapEpoch() ? 10 + 3 * e / snapEpoch() : 12 + 88 / (1 + Math.exp(-(e - snapEpoch() - 350) / 210))), right, { xmin: 0, xmax: 20000, ymin: 0, ymax: 105 }, "#16a34a", 4);
+      drawEpochMarker(ctx, left, 0, 20000); drawEpochMarker(ctx, right, 0, 20000);
+      paperLegend(ctx, [["Training Loss", "#2563eb"], ["Validation Loss", "#dc2626"]], left.x + 400, left.y + 14);
+      paperLegend(ctx, [["Training Accuracy", "#2563eb"], ["Validation Accuracy", "#16a34a"]], right.x + 330, right.y + 260);
+    }
+
+    function drawPaperCoGrokking() {
+      const canvas = $("paperCoGrokCanvas"), ctx = clearPaper(canvas);
+      const pal = chartPalette();
+      ctx.font = "800 30px system-ui";
+      ctx.fillStyle = pal.text;
+      ctx.fillText("Multi-Geometry Co-Grokking: Separate PINNs vs Shared Representation", 260, 38);
+      const left = { x: 88, y: 106, w: 650, h: 320 };
+      const right = { x: 842, y: 106, w: 650, h: 320 };
+      const xTicks = [0, 5000, 10000, 15000, 20000].map(v => ({ value: v, label: v === 0 ? "0" : `${v / 1000}k`, min: 0, max: 20000 }));
+      const yTicks = [1e-4, 1e-3, 1e-2, 1e-1, 1].map(v => ({ value: v, label: sci10(Math.round(Math.log10(v))), min: 1e-4, max: 1.2 }));
+      paperText(ctx, "A: Separate Training", left.x + 210, 82, pal.text, 27);
+      paperText(ctx, "B: Joint Training (Co-Grokking)", right.x + 160, 82, pal.text, 27);
+      paperPanel(ctx, left.x, left.y, left.w, left.h, "Training Epochs", "Validation Loss", xTicks, yTicks, true);
+      paperPanel(ctx, right.x, right.y, right.w, right.h, "Training Epochs", "Validation Loss", xTicks, yTicks, true);
+      const names = ["circle", "ellipse", "triangle", "plate", "wing"];
+      names.forEach(name => {
+        const sepSnap = GEOMS[name].snap;
+        const ptsSep = makeEpochCurve(e => e < sepSnap ? 0.86 + 0.04 * Math.sin(e / 900 + sepSnap / 1000) : 0.86 * Math.exp(-(e - sepSnap) / 680) + 1e-4, 120);
+        const ptsJoint = makeEpochCurve(e => e < 12000 ? 0.82 + 0.04 * Math.sin(e / 850 + sepSnap / 1200) : 0.82 * Math.exp(-(e - 12000) / 620) + 1e-4, 120);
+        paperPlot(ctx, ptsSep, left, { xmin: 0, xmax: 20000, ymin: 1e-4, ymax: 1.2, yLog: true }, GEOMS[name].color, name === state.geometry ? 5 : 3);
+        paperPlot(ctx, ptsJoint, right, { xmin: 0, xmax: 20000, ymin: 1e-4, ymax: 1.2, yLog: true }, GEOMS[name].color, name === state.geometry ? 5 : 3);
+      });
+      drawSnapLines(ctx, left, names.map(n => [GEOMS[n].snap, GEOMS[n].color]), 0, 20000);
+      drawSnapLines(ctx, right, [[12000, pal.text]], 0, 20000);
+      paperLegend(ctx, names.map(n => [GEOMS[n].label, GEOMS[n].color]), left.x + 18, left.y + 12);
+      paperText(ctx, "one shared snap", right.x + 365, right.y + 48, pal.text, 17, 800);
+    }
+
+    function drawSnapLines(ctx, box, snaps, xmin, xmax) {
+      snaps.forEach(([snap, color]) => {
+        const x = scale(snap, xmin, xmax, box.x, box.x + box.w);
+        ctx.strokeStyle = color;
+        ctx.setLineDash([7, 7]);
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(x, box.y);
+        ctx.lineTo(x, box.y + box.h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+    }
+
+    function drawPaperWakeProfiles() {
+      const canvas = $("paperWakeCanvas"), ctx = clearPaper(canvas);
+      const pal = chartPalette();
+      ctx.font = "800 30px system-ui";
+      ctx.fillStyle = pal.text;
+      ctx.fillText("Aerodynamic Wake Velocity Profiles: CFD Ground Truth vs. PINN Training Progress", 250, 38);
+      const left = { x: 90, y: 110, w: 650, h: 360 };
+      const right = { x: 820, y: 110, w: 650, h: 360 };
+      const xTicks = [0, 0.25, 0.5, 0.75, 1.0].map(v => ({ value: v, label: v.toFixed(2).replace(/0$/, ""), min: -0.05, max: 1.05 }));
+      const yTicks = [-2, -1, 0, 1, 2].map(v => ({ value: v, label: String(v), min: -2.5, max: 2.5 }));
+      paperText(ctx, "Wake Profile at x = 4.0 m (Near Wake)", left.x + 65, 84, pal.text, 28);
+      paperText(ctx, "Wake Profile at x = 6.0 m (Far Wake)", right.x + 90, 84, pal.text, 28);
+      paperPanel(ctx, left.x, left.y, left.w, left.h, "Normalized Velocity u/U∞", "Vertical Position y [m]", xTicks, yTicks, false);
+      paperPanel(ctx, right.x, right.y, right.w, right.h, "Normalized Velocity u/U∞", "Vertical Position y [m]", xTicks, yTicks, false);
+      drawWakePanel(ctx, left, 4.0);
+      drawWakePanel(ctx, right, 6.0);
+      paperLegend(ctx, [["CFD truth", pal.text], ["PINN memorizing", "#ef4444", [4, 7]], ["PINN grokked", "#06b6d4", [18, 9]]], left.x + 12, left.y + 258);
+      paperLegend(ctx, [["CFD truth", pal.text], ["PINN memorizing", "#ef4444", [4, 7]], ["PINN grokked", "#06b6d4", [18, 9]]], right.x + 12, right.y + 258);
+    }
+
+    function drawWakePanel(ctx, box, xSlice) {
+      const truth = [], mem = [], grok = [];
+      for (let i = 0; i <= 160; i++) {
+        const y = -2.5 + 5 * i / 160;
+        const base = velocity(xSlice, y, state.t, state.geometry);
+        truth.push([base, y]);
+        mem.push([clamp(base * 0.18 + 0.43 + 0.17 * Math.sin(13 * y + xSlice) + 0.07 * Math.sin(31 * y)), y]);
+        grok.push([clamp(base + 0.006 * Math.sin(9 * y + state.t)), y]);
+      }
+      const pal = chartPalette();
+      paperPlot(ctx, truth, box, { xmin: -0.05, xmax: 1.05, ymin: -2.5, ymax: 2.5 }, pal.text, 4);
+      paperPlot(ctx, mem, box, { xmin: -0.05, xmax: 1.05, ymin: -2.5, ymax: 2.5 }, "#ef4444", 3, [4, 7]);
+      paperPlot(ctx, grok, box, { xmin: -0.05, xmax: 1.05, ymin: -2.5, ymax: 2.5 }, "#06b6d4", 4, [18, 9]);
+    }
+
+    function drawPaperTurbulence() {
+      const canvas = $("paperTurbulenceCanvas"), ctx = clearPaper(canvas);
+      const pal = chartPalette();
+      ctx.font = "800 30px system-ui";
+      ctx.fillStyle = pal.text;
+      ctx.fillText("Physical Aerodynamics vs. PINN Generalization: Reynolds Number and Turbulence Effects", 230, 38);
+      const left = { x: 90, y: 110, w: 650, h: 360 };
+      const right = { x: 850, y: 110, w: 620, h: 360 };
+      paperText(ctx, "A: PINN Grokking Delay vs. Flow Regime Complexity", left.x + 20, 84, pal.text, 27);
+      paperText(ctx, "B: Spectral Bias and High-Frequency Representation Gap", right.x + 10, 84, pal.text, 27);
+      const reTicks = [0, 2000, 4000, 6000, 8000, 10000].map(v => ({ value: v, label: v === 0 ? "0" : `${v / 1000}k`, min: 0, max: 10000 }));
+      const epTicks = [0, 10000, 20000, 30000].map(v => ({ value: v, label: v === 0 ? "0" : `${v / 1000}k`, min: 0, max: 36000 }));
+      const iTicks = [2, 5, 8, 11, 14].map(v => ({ value: v, label: String(v), min: 1, max: 15 }));
+      const gapTicks = [0, 1, 2, 3].map(v => ({ value: v, label: String(v), min: 0, max: 3.2 }));
+      paperPanel(ctx, left.x, left.y, left.w, left.h, "Reynolds Number Re", "Required Epochs E_g", reTicks, epTicks, false);
+      paperPanel(ctx, right.x, right.y, right.w, right.h, "Turbulence Intensity I [%]", "Spectral Gap", iTicks, gapTicks, false);
+      shadePaper(ctx, left, 0, 2000, "#eaf2ff", 0, 10000);
+      shadePaper(ctx, left, 2000, 4000, "#fff7ed", 0, 10000);
+      shadePaper(ctx, left, 4000, 10000, "#fff1f2", 0, 10000);
+      const curves = [
+        ["wing", "#f59e0b", re => 8000 + 0.55 * Math.pow(re, 1.02)],
+        ["ellipse", "#06b6d4", re => 5000 + 0.95 * Math.pow(re, 1.04)],
+        ["circle", "#2563eb", re => 4000 + 1.05 * Math.pow(re, 1.04)],
+        ["wingTilted", "#ef4444", re => 10000 + 0.78 * Math.pow(re, 1.03)],
+        ["triangle", "#8b5cf6", re => 6500 + 2.75 * re],
+        ["plate", "#ec4899", re => 7500 + 4.65 * re]
+      ];
+      curves.forEach(([name, color, fn]) => {
+        const pts = [];
+        for (let re = 100; re <= 10000; re += 120) pts.push([re, Math.min(36000, fn(re))]);
+        paperPlot(ctx, pts, left, { xmin: 0, xmax: 10000, ymin: 0, ymax: 36000 }, color, name === state.geometry ? 6 : 4);
+      });
+      const gaps = [
+        ["Flat Plate (High Eddy Shedding)", "#ec4899", i => 0.05 + 0.048 * Math.pow(i, 1.5)],
+        ["Circle (Periodic Vortex Shedding)", "#2563eb", i => 0.03 + 0.035 * Math.pow(i, 1.35)],
+        ["Wing (Attached Boundary Layer)", "#f59e0b", i => 0.02 + 0.023 * Math.pow(i, 1.2)]
+      ];
+      gaps.forEach(([label, color, fn]) => {
+        const pts = [];
+        for (let i = 1; i <= 15; i += 0.15) pts.push([i, fn(i) + 0.025 * Math.sin(i * 5.1 + label.length)]);
+        paperPlot(ctx, pts, right, { xmin: 1, xmax: 15, ymin: 0, ymax: 3.2 }, color, 4);
+      });
+      paperLegend(ctx, [["Wing, 0 deg", "#f59e0b"], ["Ellipse", "#06b6d4"], ["Circle", "#2563eb"], ["Wing, high AoA", "#ef4444"], ["Wedge", "#8b5cf6"], ["Flat Plate", "#ec4899"]], left.x + 18, left.y + 12);
+      paperLegend(ctx, gaps.map(([label, color]) => [label, color]), right.x + 16, right.y + 12);
+    }
+
+    function shadePaper(ctx, box, xmin, xmax, color, rangeMin = 0, rangeMax = 20000) {
+      const x1 = scale(xmin, rangeMin, rangeMax, box.x, box.x + box.w);
+      const x2 = scale(xmax, rangeMin, rangeMax, box.x, box.x + box.w);
+      ctx.fillStyle = color;
+      ctx.fillRect(x1, box.y, x2 - x1, box.h);
+    }
+
+    function drawEpochMarker(ctx, box, xmin, xmax) {
+      const pal = chartPalette();
+      const x = scale(state.epoch, xmin, xmax, box.x, box.x + box.w);
+      ctx.strokeStyle = pal.text;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y + box.h); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawResearchGraphs() {
+      drawPaperLossAccuracy();
+      drawPaperCoGrokking();
+      drawPaperWakeProfiles();
+      drawPaperTurbulence();
+    }
+
+    function drawArchitecture() {
+      const c = $("architectureCanvas"), ctx = clearDarkChart(c);
+      const boxes = [
+        ["Input coordinates (x, y, t)", 350, 36, 320, 54, "#162132"],
+        ["Geometry embedding g", 350, 120, 320, 54, "#162132"],
+        ["Fourier features φ(x,y,t)", 86, 220, 270, 56, "#132a31"],
+        ["Signed distance field d(x,y;g)", 664, 220, 270, 56, "#132a31"],
+        ["Shared trunk zθ", 250, 340, 520, 210, "#191f2a"],
+        ["Velocity head (u, v)", 82, 625, 230, 58, "#15251d"],
+        ["Pressure head p", 390, 625, 220, 58, "#15251d"],
+        ["Wake residual head rω", 700, 625, 230, 58, "#15251d"],
+        ["Autograd ∂x, ∂y, ∇²", 360, 735, 300, 58, "#211c30"],
+        ["Navier-Stokes residual", 78, 850, 250, 62, "#241b15"],
+        ["Boundary residual", 385, 850, 250, 62, "#241b15"],
+        ["Regularization", 692, 850, 250, 62, "#241b15"]
+      ];
+      boxes.forEach(([label, x, y, w, h, fill]) => box(ctx, x, y, w, h, label, fill));
+      arrow(ctx, 510, 90, 510, 120);
+      arrow(ctx, 420, 174, 220, 220); arrow(ctx, 600, 174, 800, 220);
+      arrow(ctx, 220, 276, 380, 340); arrow(ctx, 800, 276, 640, 340);
+      arrow(ctx, 510, 550, 197, 625); arrow(ctx, 510, 550, 500, 625); arrow(ctx, 510, 550, 815, 625);
+      arrow(ctx, 197, 683, 440, 735); arrow(ctx, 500, 683, 510, 735); arrow(ctx, 815, 683, 585, 735);
+      arrow(ctx, 510, 793, 203, 850); arrow(ctx, 510, 793, 510, 850); arrow(ctx, 510, 793, 817, 850);
+
+      ctx.strokeStyle = "#27d8c6"; ctx.setLineDash([8, 6]); ctx.lineWidth = 2;
+      roundRect(ctx, 225, 315, 570, 260, 14); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "#dbe6f2"; ctx.font = "800 24px system-ui"; ctx.fillText("Multi-task Shared Trunk", 372, 382);
+      drawLayerStack(ctx, 310, 420, 400, 80);
+      ctx.fillStyle = "#27d8c6"; ctx.font = "700 15px system-ui"; ctx.fillText("one latent coordinate map shared by all shapes", 342, 535);
+      ctx.fillStyle = "#dbe6f2"; ctx.font = "800 16px system-ui";
+      ctx.fillText("Ltotal = Ldata + Lpde + Lbc + λ||θ||²", 330, 955);
+    }
+
+    function drawLayerStack(ctx, x, y, w, h) {
+      const colors = ["#22304a", "#1d3b46", "#25304b", "#1d3b46", "#22304a"];
+      colors.forEach((color, i) => {
+        const xx = x + i * 68;
+        ctx.fillStyle = color;
+        ctx.strokeStyle = "#52627a";
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, xx, y + (i % 2) * 8, 58, h - (i % 2) * 16, 8);
+        ctx.fill(); ctx.stroke();
+        if (i < colors.length - 1) arrow(ctx, xx + 58, y + h / 2, xx + 68, y + h / 2);
+      });
+      ctx.fillStyle = "#9fb2c8";
+      ctx.font = "700 13px system-ui";
+      ctx.fillText("Fourier", x + 3, y - 14);
+      ctx.fillText("MLP", x + 145, y - 14);
+      ctx.fillText("Residual", x + 275, y - 14);
+    }
+
+    function box(ctx, x, y, w, h, label, fill) {
+      ctx.fillStyle = fill; ctx.strokeStyle = "#344052"; ctx.lineWidth = 1.5;
+      roundRect(ctx, x, y, w, h, 8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#eff6ff"; ctx.font = "700 18px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(label, x + w / 2, y + h / 2);
+      ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+    }
+
+    function arrow(ctx, x1, y1, x2, y2) {
+      ctx.strokeStyle = "#7f92aa"; ctx.fillStyle = "#7f92aa"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const a = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 8 * Math.cos(a - 0.45), y2 - 8 * Math.sin(a - 0.45)); ctx.lineTo(x2 - 8 * Math.cos(a + 0.45), y2 - 8 * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+
+    function makeSeries(fn) {
+      const pts = [];
+      for (let e = 0; e <= 20000; e += 250) pts.push([e, fn(e)]);
+      return pts;
+    }
+
+    function peak(k, center, amp) {
+      return amp * Math.exp(-Math.pow(k - center, 2) / 1.2);
+    }
+
+    function scale(v, a, b, c, d) {
+      return c + (v - a) / (b - a) * (d - c);
+    }
+
+    function plotLine(ctx, pts, color, pad, xmin, xmax, ymin, ymax, logY) {
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+      pts.forEach(([xv, yv], i) => {
+        const yval = logY ? Math.log10(Math.max(yv, 1e-5)) : yv;
+        const ya = logY ? -5 : ymin, yb = logY ? Math.log10(ymax) : ymax;
+        const x = scale(xv, xmin, xmax, pad, w - pad);
+        const y = scale(yval, ya, yb, h - pad, pad);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function plotXY(ctx, pts, color, pad, xmin, xmax, ymin, ymax) {
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+      pts.forEach(([xv, yv], i) => {
+        const x = scale(xv, xmin, xmax, pad, w - pad);
+        const y = scale(yv, ymin, ymax, h - pad, pad);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function chartLegend(ctx, items, x, y) {
+      ctx.font = "12px system-ui";
+      items.forEach(([label, color], i) => {
+        const lx = x + i * 118;
+        ctx.fillStyle = color; ctx.fillRect(lx, y - 8, 18, 3);
+        ctx.fillStyle = "#334155"; ctx.fillText(label, lx + 25, y);
+      });
+    }
+
+    function chartTitle(ctx, text) {
+      const pal = chartPalette();
+      ctx.fillStyle = pal.text; ctx.font = "700 14px system-ui"; ctx.fillText(text, 46, 26);
+    }
+
+    function shade(ctx, pad, xmin, xmax, color) {
+      const x1 = scale(xmin, 0, 100, pad, ctx.canvas.width - pad);
+      const x2 = scale(xmax, 0, 100, pad, ctx.canvas.width - pad);
+      ctx.fillStyle = color; ctx.fillRect(x1, pad, x2 - x1, ctx.canvas.height - pad * 2);
+    }
+
+    function solverDiagnostics() {
+      const mesh = {
+        coarse: { cfl: 1.12, mass: 4.8, yPlus: 95, delta: 12.4, residual: 3.3, quality: 0.62 },
+        medium: { cfl: 0.82, mass: 2.2, yPlus: 38, delta: 5.7, residual: 1.35, quality: 0.78 },
+        fine: { cfl: 0.58, mass: 0.8, yPlus: 8, delta: 1.9, residual: 0.55, quality: 0.91 }
+      }[state.meshLevel];
+      const progress = clamp(state.epoch / snapEpoch(), 0, 1.4);
+      const anglePenalty = 1 + Math.abs(state.angle) / 130;
+      const modelPenalty = state.flowModel === "compressible" ? 1.65 : 1;
+      const lesPenalty = state.turbulence === "les" ? 2.2 : 1;
+      const residual = Math.pow(10, -1.2 - progress * 3.1) * mesh.residual * anglePenalty * modelPenalty * lesPenalty;
+      const cfl = (state.windSpeed / 18) * mesh.cfl * (state.flowModel === "compressible" ? 1.2 : 1);
+      const massError = mesh.mass * (1.15 - 0.45 * clamp(progress)) * anglePenalty;
+      const baseCd = { circle: 1.05, ellipse: 0.38, triangle: 0.82, plate: 1.45, wing: 0.18 }[state.geometry] || 0.6;
+      const cd = baseCd * (state.drag / 100) * (1 + Math.abs(state.angle) / 95) * (state.windSpeed / 18);
+      const cl = state.geometry === "wing"
+        ? 0.9 * Math.sin(2 * attackRad()) * (state.windSpeed / 18)
+        : 0.24 * Math.sin(attackRad()) * (state.drag / 100);
+      const pressureDrift = mesh.delta * 0.55 + Math.abs(state.angle) * 0.025;
+      return { mesh, residual, cfl, massError, cd, cl, pressureDrift };
+    }
+
+    function status(label, stateName) {
+      return `<span class="status-chip ${stateName}">${label}</span>`;
+    }
+
+    function level(ok, warn, value) {
+      if (ok(value)) return ["Pass", "ok"];
+      if (warn(value)) return ["Warn", "warn"];
+      return ["Fail", "hot"];
+    }
+
+    function updateSolverReport() {
+      const d = solverDiagnostics();
+      $("solverResidual").textContent = d.residual.toExponential(1);
+      $("solverCfl").textContent = d.cfl.toFixed(2);
+      $("solverMass").textContent = d.massError.toFixed(2) + "%";
+      $("solverForces").textContent = `Cd ${d.cd.toFixed(2)} / Cl ${d.cl.toFixed(2)}`;
+      $("accuracyClaim").textContent = "Demo only: no accuracy claim";
+      const residualState = level(v => v < 1e-4, v => v < 1e-3, d.residual);
+      const cflState = level(v => v <= 0.9, v => v <= 1.2, d.cfl);
+      const massState = level(v => v < 1, v => v < 3, d.massError);
+      const yPlusState = level(v => v <= 15, v => v <= 50, d.mesh.yPlus);
+      const pressureState = level(v => v < 2, v => v < 6, d.pressureDrift);
+      const validationState = state.validation === "none" ? ["Required", "warn"] : ["Selected", "warn"];
+      const meshState = state.meshLevel === "fine" ? ["Estimated", "warn"] : state.meshLevel === "medium" ? ["Incomplete", "warn"] : ["Coarse", "hot"];
+      const turbulenceState = state.turbulence === "les" || state.flowModel === "compressible" ? ["Limited", "warn"] : ["Surrogate", "warn"];
+      const rows = [
+        ["Mesh quality and y+", status(yPlusState[0], yPlusState[1]), `${MESH_LABELS[state.meshLevel]} visual mesh, estimated quality ${d.mesh.quality.toFixed(2)}, y+ ${d.mesh.yPlus}. Boundary-layer cells are not physically meshed here.`],
+        ["Mesh independence", status(meshState[0], meshState[1]), `Three-level estimate delta ${d.mesh.delta.toFixed(1)}%. Treat as a warning indicator, not a solved grid-convergence index.`],
+        ["Residual and CFL", status(residualState[0] === "Pass" && cflState[0] === "Pass" ? "Pass" : cflState[1] === "hot" ? "Fail" : "Warn", cflState[1] === "hot" ? "hot" : residualState[1] === "ok" && cflState[1] === "ok" ? "ok" : "warn"), `Residual ${d.residual.toExponential(2)}, CFL ${d.cfl.toFixed(2)}. Time-step control is represented by CFL warnings.`],
+        ["Mass conservation", status(massState[0], massState[1]), `Estimated continuity error ${d.massError.toFixed(2)}%. In a real conservative finite-volume run this must be near zero.`],
+        ["Drag, lift, pressure", status(pressureState[0], pressureState[1]), `Estimated Cd ${d.cd.toFixed(2)}, Cl ${d.cl.toFixed(2)}, pressure drift ${d.pressureDrift.toFixed(1)}%. Convergence is diagnostic only.`],
+        ["Flow and turbulence", status(turbulenceState[0], turbulenceState[1]), `${FLOW_LABELS[state.flowModel]} with ${TURB_LABELS[state.turbulence]}. Laminar, k-epsilon, and SST are stylized wake models; LES is not a true resolved simulation.`],
+        ["Validation mode", status(validationState[0], validationState[1]), `${VALIDATION_LABELS[state.validation]}. Benchmark selection documents intent, but accuracy remains blocked without real convergence and validation data.`]
+      ];
+      $("solverRows").innerHTML = rows.map(([check, stat, evidence]) => `<tr><td>${check}</td><td>${stat}</td><td>${evidence}</td></tr>`).join("");
+    }
+
+    function updateUI() {
+      const shapeLabel = state.angle === 0 ? GEOMS[state.geometry].label : `${GEOMS[state.geometry].label}, ${state.angle} deg`;
+      $("geometryValue").textContent = shapeLabel;
+      $("trainingValue").textContent = state.training === "joint" ? "Joint" : "Separate";
+      $("epochValue").textContent = fmt(state.epoch);
+      $("collocationValue").textContent = state.collocation + "%";
+      $("advancedValue").textContent = state.advanced ? "On" : "Off";
+      $("advancedToggle").textContent = state.advanced ? "Hide parameters" : "Show parameters";
+      $("advancedToggle").classList.toggle("active", state.advanced);
+      $("advancedControls").classList.toggle("hidden", !state.advanced);
+      $("angleValue").textContent = state.angle + " deg";
+      $("windValue").textContent = state.windSpeed + " m/s";
+      $("dragValue").textContent = state.drag + "%";
+      $("flowSelect").value = state.flowModel;
+      $("turbulenceSelect").value = state.turbulence;
+      $("meshSelect").value = state.meshLevel;
+      $("validationSelect").value = state.validation;
+      $("statShape").textContent = shapeLabel;
+      $("statState").textContent = grokked() ? "Grokked" : "Memorizing";
+      $("statSnap").textContent = fmt(snapEpoch());
+      $("statScarcity").textContent = scarcityLabel();
+      $("pinnCaption").textContent = grokked() ? "generalized field" : "pre-snap field";
+      $("playToggle").textContent = state.playing ? "Flow animation on" : "Flow animation off";
+      $("playToggle").classList.toggle("active", state.playing);
+      $("themeValue").textContent = state.theme === "dark" ? "Dark" : "Light";
+      $("themeToggle").innerHTML = state.theme === "dark"
+        ? '<span class="theme-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8Z"/></svg></span>Dark mode'
+        : '<span class="theme-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span>Light mode';
+      $("themeToggle").classList.toggle("active", state.theme === "dark");
+      document.body.dataset.theme = state.theme;
+      document.querySelectorAll("[data-geometry]").forEach(b => b.classList.toggle("active", b.dataset.geometry === state.geometry));
+      document.querySelectorAll("[data-training]").forEach(b => b.classList.toggle("active", b.dataset.training === state.training));
+      updateSolverReport();
+    }
+
+    function setView(view) {
+      state.view = view;
+      document.querySelectorAll(".tab-button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+      ["wind", "benchmark", "research", "diagnostics", "architecture", "physics", "report"].forEach(v => $("view-" + v).classList.toggle("hidden", v !== view));
+      window.MathJax?.typesetPromise?.();
+      drawStatic();
+    }
+
+    function drawBenchmark(t) {
+      const grid = $("benchmarkGrid");
+      if (!grid.dataset.ready) {
+        grid.innerHTML = "";
+        Object.keys(GEOMS).forEach(g => {
+          const panel = document.createElement("article");
+          panel.className = "panel";
+          panel.innerHTML = `<div class="panel-head"><span>${GEOMS[g].label}</span><small>${fmt(snapEpoch(g))}</small></div><div class="canvas-wrap"><canvas data-bench="${g}" width="360" height="180"></canvas></div>`;
+          grid.appendChild(panel);
+        });
+        grid.dataset.ready = "true";
+      }
+      document.querySelectorAll("[data-bench]").forEach(c => drawField(c, c.dataset.bench, true, t));
+    }
+
+    function drawStatic() {
+      drawLossChart(); drawProfileChart(); drawSpectrumChart(); drawScarcityChart(); drawSnapChart(); drawPhaseChart(); drawResearchGraphs(); drawArchitecture();
+    }
+
+    function frame(now) {
+      const dt = Math.min(0.04, (now - state.lastFrame) / 1000 || 0.016);
+      state.lastFrame = now;
+      state.fps = state.fps * 0.92 + (1 / Math.max(dt, 0.001)) * 0.08;
+      $("fpsValue").textContent = Math.round(state.fps) + " fps";
+      if (state.playing) state.t += dt * 1.6;
+
+      if (state.view === "wind") {
+        drawField($("truthCanvas"), state.geometry, false, state.t);
+        drawField($("pinnCanvas"), state.geometry, true, state.t);
+        drawProfileChart();
+      } else if (state.view === "benchmark") {
+        drawBenchmark(state.t);
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    function openResearchZoom(canvas) {
+      const overlay = $("zoomOverlay");
+      const image = $("zoomImage");
+      const stage = overlay.querySelector(".zoom-stage");
+      $("zoomTitle").textContent = RESEARCH_TITLES[canvas.id] || "Research Figure";
+      image.src = canvas.toDataURL("image/png");
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+      stage.scrollLeft = 0;
+      stage.scrollTop = 0;
+    }
+
+    function closeResearchZoom() {
+      const overlay = $("zoomOverlay");
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+      $("zoomImage").removeAttribute("src");
+    }
+
+    function bind() {
+      $("geometryButtons").addEventListener("click", e => {
+        if (!e.target.dataset.geometry) return;
+        state.geometry = e.target.dataset.geometry;
+        updateUI(); drawStatic();
+      });
+      $("trainingButtons").addEventListener("click", e => {
+        if (!e.target.dataset.training) return;
+        state.training = e.target.dataset.training;
+        $("benchmarkGrid").dataset.ready = "";
+        updateUI(); drawStatic();
+      });
+      $("epochSlider").addEventListener("input", e => {
+        state.epoch = Number(e.target.value);
+        updateUI(); drawStatic();
+      });
+      $("collocationSlider").addEventListener("input", e => {
+        state.collocation = Number(e.target.value);
+        updateUI(); drawStatic();
+      });
+      $("advancedToggle").addEventListener("click", () => {
+        state.advanced = !state.advanced;
+        updateUI();
+      });
+      $("angleSlider").addEventListener("input", e => {
+        state.angle = Number(e.target.value);
+        updateUI(); drawStatic();
+      });
+      $("windSlider").addEventListener("input", e => {
+        state.windSpeed = Number(e.target.value);
+        updateUI(); drawStatic();
+      });
+      $("dragSlider").addEventListener("input", e => {
+        state.drag = Number(e.target.value);
+        updateUI(); drawStatic();
+      });
+      $("flowSelect").addEventListener("change", e => {
+        state.flowModel = e.target.value;
+        updateUI(); drawStatic();
+      });
+      $("turbulenceSelect").addEventListener("change", e => {
+        state.turbulence = e.target.value;
+        updateUI(); drawStatic();
+      });
+      $("meshSelect").addEventListener("change", e => {
+        state.meshLevel = e.target.value;
+        updateUI(); drawStatic();
+      });
+      $("validationSelect").addEventListener("change", e => {
+        state.validation = e.target.value;
+        updateUI();
+      });
+      $("playToggle").addEventListener("click", () => {
+        state.playing = !state.playing;
+        updateUI();
+      });
+      $("themeToggle").addEventListener("click", () => {
+        state.theme = state.theme === "dark" ? "light" : "dark";
+        updateUI(); drawStatic();
+      });
+      document.querySelectorAll(".tab-button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+      document.querySelectorAll(".paper-canvas").forEach(canvas => {
+        canvas.addEventListener("click", () => openResearchZoom(canvas));
+      });
+      $("zoomClose").addEventListener("click", closeResearchZoom);
+      $("zoomOverlay").addEventListener("click", e => {
+        if (e.target === $("zoomOverlay")) closeResearchZoom();
+      });
+      window.addEventListener("keydown", e => {
+        if (e.key === "Escape" && $("zoomOverlay").classList.contains("active")) closeResearchZoom();
+      });
+    }
+
+    bind();
+    updateUI();
+    drawStatic();
+    if (window.MathJax?.typesetPromise) {
+      window.MathJax.typesetPromise();
+    } else {
+      window.addEventListener("load", () => window.MathJax?.typesetPromise?.());
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
