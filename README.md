@@ -12,34 +12,33 @@
 </p>
 
 <p align="center">
-  <a href="https://AchyuthanVallath.github.io/pinn-fluid-dashboard/">
-    <img alt="Open Dashboard" src="https://img.shields.io/badge/OPEN-DASHBOARD-0ea5e9?style=for-the-badge">
-  </a>
-  <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/tree/main/src/pinn_fluid_dashboard">
-    <img alt="Python Backbone" src="https://img.shields.io/badge/PYTHON-BACKBONE-2563eb?style=for-the-badge">
-  </a>
-  <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/archive/refs/heads/main.zip">
-    <img alt="Download ZIP" src="https://img.shields.io/badge/DOWNLOAD-SOURCE%20ZIP-64748b?style=for-the-badge">
-  </a>
-</p>
-
-<p align="center">
   <strong>An interactive lab-report dashboard exploring physics-informed neural network grokking, fluid-flow visualization, wake profiles, turbulence diagnostics, and PINN/CFD equations.</strong>
 </p>
 
----
-
-## Downloads
+## Website
 
 <p align="center">
   <a href="https://AchyuthanVallath.github.io/pinn-fluid-dashboard/">
-    <img alt="Open GitHub Pages site" src="https://img.shields.io/badge/OPEN-GITHUB%20PAGES%20SITE-0284c7?style=for-the-badge">
+    <img alt="Open Website" src="https://img.shields.io/badge/OPEN%20WEBSITE%20%E2%86%92-0ea5e9?style=for-the-badge&logo=githubpages&logoColor=white">
+  </a>
+</p>
+
+<p align="center"><strong>Click the button above to open the live dashboard.</strong></p>
+
+## Code & Downloads
+
+<p align="center">
+  <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/tree/main/src/pinn_fluid_dashboard">
+    <img alt="Python Backbone" src="https://img.shields.io/badge/PYTHON-BACKBONE-2563eb?style=for-the-badge&logo=python&logoColor=white">
   </a>
   <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/blob/main/CODE_GUIDE.md">
     <img alt="Code guide" src="https://img.shields.io/badge/READ-CODE%20GUIDE-8b5cf6?style=for-the-badge">
   </a>
   <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/archive/refs/heads/main.zip">
     <img alt="Download source" src="https://img.shields.io/badge/DOWNLOAD-SOURCE%20CODE%20(.ZIP)-475569?style=for-the-badge">
+  </a>
+  <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/blob/main/index.html">
+    <img alt="View index" src="https://img.shields.io/badge/VIEW-index.html-334155?style=for-the-badge">
   </a>
 </p>
 
@@ -79,8 +78,6 @@ python scripts/generate_research_plots.py
 - **Architecture**: explains the PINN model structure and AI equations.
 - **Physics**: explains governing flow and reliability formulas.
 - **Report**: full lab-report style explanation of the project, settings, graphs, equations, limitations, and conclusions.
-
-
 
 ## Accuracy Notice
 
