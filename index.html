@@ -289,108 +289,6 @@
       white-space: nowrap;
     }
 
-    .project-ribbon {
-      display: grid;
-      gap: 11px;
-      padding: 12px 20px 14px;
-      border-bottom: 1px solid var(--line);
-      background: color-mix(in srgb, var(--panel) 28%, var(--bg));
-    }
-
-    .badge-row,
-    .action-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .mini-badge {
-      display: inline-flex;
-      align-items: center;
-      min-height: 22px;
-      border-radius: 3px;
-      overflow: hidden;
-      border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-      background: #3d4652;
-      color: #f8fafc;
-      font-size: 11px;
-      line-height: 1;
-      font-weight: 820;
-      letter-spacing: 0.02em;
-      text-transform: none;
-    }
-
-    .mini-badge span {
-      display: inline-flex;
-      align-items: center;
-      min-height: 22px;
-      padding: 0 7px;
-    }
-
-    .mini-badge strong {
-      display: inline-flex;
-      align-items: center;
-      min-height: 22px;
-      padding: 0 7px;
-      color: #fff;
-      font-weight: 880;
-    }
-
-    .mini-badge.blue strong { background: #0ea5e9; }
-    .mini-badge.green strong { background: #65a30d; }
-    .mini-badge.amber strong { background: #eab308; color: #1e293b; }
-    .mini-badge.rose strong { background: #f43f5e; }
-    .mini-badge.violet strong { background: #8b5cf6; }
-    .mini-badge.cyan strong { background: #0891b2; }
-
-    .action-button {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 34px;
-      border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-      border-radius: 3px;
-      padding: 0 12px;
-      background: #4b5563;
-      color: #f8fafc;
-      text-decoration: none;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 860;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      transition: transform 140ms ease, filter 140ms ease, background 140ms ease;
-    }
-
-    .action-button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.08);
-    }
-
-    .action-button.primary { background: #0284c7; }
-    .action-button.report { background: #8b5cf6; }
-    .action-button.source { background: #475569; }
-    .action-button .icon {
-      display: inline-grid;
-      place-items: center;
-      width: 16px;
-      height: 16px;
-      border-radius: 3px;
-      background: rgba(255, 255, 255, 0.16);
-      letter-spacing: 0;
-      font-size: 11px;
-    }
-
-    body[data-theme="light"] .project-ribbon {
-      background: #f8fafc;
-    }
-
-    body[data-theme="light"] .mini-badge {
-      background: #64748b;
-      border-color: #cbd5e1;
-    }
-
     .tabs {
       display: flex;
       flex-wrap: wrap;
@@ -871,7 +769,6 @@
       html, body { overflow: auto; }
       .stats { min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .topbar, .subgrid, .architecture { grid-template-columns: 1fr; }
-      .project-ribbon { padding-inline: 14px; }
       .canvas-grid.benchmark { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .research-note { grid-template-columns: 1fr; }
       .report-stack > .panel { min-height: auto; }
@@ -890,19 +787,6 @@
         text-align: center;
         min-height: 44px;
       }
-      .action-button {
-        flex: 1 1 calc(50% - 6px);
-        justify-content: center;
-        min-height: 42px;
-      }
-      .mini-badge {
-        flex: 1 1 calc(50% - 6px);
-      }
-      .mini-badge span,
-      .mini-badge strong {
-        flex: 1;
-        justify-content: center;
-      }
       .segmented button,
       .toggle,
       .select-row select {
@@ -918,8 +802,6 @@
     @media (max-width: 480px) {
       .stats { grid-template-columns: 1fr; }
       .tab-button { flex-basis: 100%; }
-      .action-button,
-      .mini-badge { flex-basis: 100%; }
       .solver-summary { grid-template-columns: 1fr; }
       .solver-summary div { border-right: 0; }
     }
@@ -1038,22 +920,6 @@
         <div class="stat"><span>Scarcity</span><strong id="statScarcity">Grokking</strong></div>
       </div>
     </header>
-
-    <section class="project-ribbon" aria-label="Project resources">
-      <div class="badge-row">
-        <span class="mini-badge blue"><span>HTML</span><strong>Canvas</strong></span>
-        <span class="mini-badge cyan"><span>MathJax</span><strong>LaTeX</strong></span>
-        <span class="mini-badge green"><span>PINN</span><strong>Grokking</strong></span>
-        <span class="mini-badge amber"><span>GitHub Pages</span><strong>Ready</strong></span>
-        <span class="mini-badge violet"><span>Report</span><strong>Lab Style</strong></span>
-      </div>
-      <div class="action-row">
-        <a class="action-button primary" href="https://htmlpreview.github.io/?https://github.com/AchyuthanVallath/pinn-fluid-dashboard/blob/main/index.html" target="_blank" rel="noopener"><span class="icon">↗</span>Open Public Preview</a>
-        <a class="action-button source" href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard" target="_blank" rel="noopener"><span class="icon">{ }</span>Source Code</a>
-        <a class="action-button source" href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/archive/refs/heads/main.zip"><span class="icon">↓</span>Download Zip</a>
-        <button class="action-button report" type="button" data-jump-view="report"><span class="icon">R</span>Project Report</button>
-      </div>
-    </section>
 
     <nav class="tabs" aria-label="Views">
       <button class="tab-button active" data-view="wind">Live Wind Tunnel</button>
@@ -2713,7 +2579,6 @@
         updateUI(); drawStatic();
       });
       document.querySelectorAll(".tab-button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
-      document.querySelectorAll("[data-jump-view]").forEach(b => b.addEventListener("click", () => setView(b.dataset.jumpView)));
       document.querySelectorAll(".paper-canvas").forEach(canvas => {
         canvas.addEventListener("click", () => openResearchZoom(canvas));
       });
