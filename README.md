@@ -1,4 +1,4 @@
-#  PINN Fluid Dynamics Dashboard
+# PINN Fluid Dynamics Dashboard
 
 ### Full Interactive Scientific Visualization Suite · Physics-Informed Neural Networks · Grokking · CFD Surrogates
 
@@ -11,14 +11,14 @@
 </p>
 
 <p align="center">
-  <a href="https://htmlpreview.github.io/?https://github.com/AchyuthanVallath/pinn-fluid-dashboard/blob/main/index.html">
+  <a href="https://AchyuthanVallath.github.io/pinn-fluid-dashboard/">
     <img alt="Open Dashboard" src="https://img.shields.io/badge/OPEN-DASHBOARD-0ea5e9?style=for-the-badge">
   </a>
   <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/archive/refs/heads/main.zip">
     <img alt="Download ZIP" src="https://img.shields.io/badge/DOWNLOAD-SOURCE%20ZIP-64748b?style=for-the-badge">
   </a>
-  <a href="https://AchyuthanVallath.github.io/pinn-fluid-dashboard/">
-    <img alt="GitHub Pages" src="https://img.shields.io/badge/GITHUB%20PAGES-LIVE%20SITE-8b5cf6?style=for-the-badge">
+  <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/blob/main/index.html">
+    <img alt="View Source" src="https://img.shields.io/badge/VIEW-index.html-8b5cf6?style=for-the-badge">
   </a>
 </p>
 
@@ -31,8 +31,8 @@
 ## Downloads
 
 <p align="center">
-  <a href="https://htmlpreview.github.io/?https://github.com/AchyuthanVallath/pinn-fluid-dashboard/blob/main/index.html">
-    <img alt="Open public preview" src="https://img.shields.io/badge/OPEN-PUBLIC%20PREVIEW-0284c7?style=for-the-badge">
+  <a href="https://AchyuthanVallath.github.io/pinn-fluid-dashboard/">
+    <img alt="Open GitHub Pages site" src="https://img.shields.io/badge/OPEN-GITHUB%20PAGES%20SITE-0284c7?style=for-the-badge">
   </a>
   <a href="https://github.com/AchyuthanVallath/pinn-fluid-dashboard/archive/refs/heads/main.zip">
     <img alt="Download source" src="https://img.shields.io/badge/DOWNLOAD-SOURCE%20CODE%20(.ZIP)-475569?style=for-the-badge">
