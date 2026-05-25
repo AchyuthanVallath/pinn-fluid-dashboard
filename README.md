@@ -80,11 +80,7 @@ python scripts/generate_research_plots.py
 - **Physics**: explains governing flow and reliability formulas.
 - **Report**: full lab-report style explanation of the project, settings, graphs, equations, limitations, and conclusions.
 
-## GitHub Pages
 
-The public dashboard is available here: <https://AchyuthanVallath.github.io/pinn-fluid-dashboard/>.
-
-If the GitHub Pages link is not live yet, open repository **Settings → Pages**, then deploy from branch `main` and folder `/ (root)`.
 
 ## Accuracy Notice
 
