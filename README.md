@@ -52,12 +52,6 @@
 - **Physics**: explains governing flow and reliability formulas.
 - **Report**: full lab-report style explanation of the project, settings, graphs, equations, limitations, and conclusions.
 
-## GitHub Pages
 
-This repository is ready to publish with GitHub Pages from the `main` branch and repository root. The dashboard entry point is `index.html`.
-
-If the GitHub Pages link is not live yet, open repository **Settings → Pages**, then deploy from branch `main` and folder `/ (root)`.
-
-## Accuracy Notice
 
 This is an educational browser dashboard. It does not claim production CFD accuracy. Real CFD validation would require geometry cleanup, adaptive meshing, mesh independence, residual convergence, mass conservation checks, and benchmark validation.
