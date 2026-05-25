@@ -2,6 +2,11 @@
 
 Interactive scientific dashboard for exploring physics-informed neural network grokking in simplified fluid dynamics.
 
+## Open the Website
+
+- **Immediate public preview:** [Open Dashboard](https://htmlpreview.github.io/?https://github.com/AchyuthanVallath/pinn-fluid-dashboard/blob/main/index.html)
+- **GitHub Pages URL after Pages is enabled:** [Open GitHub Pages Site](https://AchyuthanVallath.github.io/pinn-fluid-dashboard/)
+
 ## Sections
 
 - **Live Wind Tunnel**: compares a ground-truth flow surrogate against a PINN-style prediction.
@@ -16,11 +21,7 @@ Interactive scientific dashboard for exploring physics-informed neural network g
 
 This repository is ready to publish with GitHub Pages from the `main` branch and repository root. The dashboard entry point is `index.html`.
 
-Public URL after Pages is enabled:
-
-```text
-https://AchyuthanVallath.github.io/pinn-fluid-dashboard/
-```
+If the GitHub Pages link is not live yet, open repository **Settings → Pages**, then deploy from branch `main` and folder `/ (root)`.
 
 ## Accuracy Notice
 
