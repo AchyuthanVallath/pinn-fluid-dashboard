@@ -1,4 +1,4 @@
-# 🧠 PINN Fluid Dynamics Dashboard
+#  PINN Fluid Dynamics Dashboard
 
 ### Full Interactive Scientific Visualization Suite · Physics-Informed Neural Networks · Grokking · CFD Surrogates
 
